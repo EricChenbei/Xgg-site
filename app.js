@@ -17,6 +17,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const closePaymentBtn = document.getElementById('close-payment-btn');
   const confirmPaymentBtn = document.getElementById('confirm-payment-btn');
 
+  const successDialog = document.getElementById('success-dialog');
+  const successCloseBtn = document.getElementById('success-close-btn');
+  const finishBtn = document.getElementById('finish-btn');
+
   // Stricter Email Format Regex
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
@@ -128,6 +132,17 @@ document.addEventListener('DOMContentLoaded', () => {
   dialogCloseBtn.addEventListener('click', closeDialog);
   closePaymentBtn.addEventListener('click', closeDialog);
   
+  const payVerificationInput = document.getElementById('pay-verification');
+  const payVerificationError = document.getElementById('pay-verification-error');
+
+  payVerificationInput.addEventListener('input', (e) => {
+    if (e.target.value.trim().length > 0) {
+      confirmPaymentBtn.disabled = false;
+    } else {
+      confirmPaymentBtn.disabled = true;
+    }
+  });
+
   /**
    * Payment Confirmation Click: Only trigger Formspree notification when customer clicks "I have paid"
    * MANDATORY: Requires filling in their Alipay Name/Transaction ID to prevent fake paid claims!
@@ -135,8 +150,6 @@ document.addEventListener('DOMContentLoaded', () => {
   confirmPaymentBtn.addEventListener('click', async () => {
     if (!tempEmail) return;
 
-    const payVerificationInput = document.getElementById('pay-verification');
-    const payVerificationError = document.getElementById('pay-verification-error');
     const payVerification = payVerificationInput.value.trim();
 
     // Validate manual payment confirmation info
@@ -187,16 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (response.ok) {
         closeDialog();
-        // Custom elegant alert
-        alert('感谢您的登记与支付！付款确认与您的付款凭证已成功发送至商家。系统将在 5-10 分钟内自动发送加速器账号凭证与使用说明至您的邮箱，请注意查收（含垃圾箱）。');
-        
-        // Fully reset form and clear state
-        form.reset();
-        payVerificationInput.value = '';
-        emailInput.classList.remove('custom-invalid');
-        confirmInput.classList.remove('custom-invalid');
-        payVerificationInput.classList.remove('custom-invalid');
-        tempEmail = '';
+        // Show success and subscription links dialog
+        successDialog.showModal();
       } else {
         throw new Error('Notification transmission failed');
       }
@@ -216,6 +221,44 @@ document.addEventListener('DOMContentLoaded', () => {
       confirmPaymentBtn.disabled = false;
       confirmPaymentBtn.textContent = originalText;
     }
+  });
+
+  /**
+   * Success Dialog and Copy Logic
+   */
+  const closeSuccess = () => {
+    successDialog.close();
+    form.reset();
+    payVerificationInput.value = '';
+    emailInput.classList.remove('custom-invalid');
+    confirmInput.classList.remove('custom-invalid');
+    payVerificationInput.classList.remove('custom-invalid');
+    tempEmail = '';
+    confirmPaymentBtn.disabled = true;
+  };
+
+  successCloseBtn.addEventListener('click', closeSuccess);
+  finishBtn.addEventListener('click', closeSuccess);
+
+  const copyBtns = document.querySelectorAll('.copy-btn');
+  copyBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const textToCopy = btn.getAttribute('data-clipboard');
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        const originalText = btn.textContent;
+        btn.textContent = '已复制!';
+        btn.style.background = '#10b981';
+        btn.style.color = '#fff';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.background = '';
+          btn.style.color = '';
+        }, 2000);
+      }).catch(err => {
+        console.error('Copy failed', err);
+        alert('复制失败，请手动选择复制。');
+      });
+    });
   });
 
   /**
