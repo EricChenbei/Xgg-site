@@ -113,12 +113,30 @@
       <section class="card duration-card" aria-labelledby="duration-title">
         <h2 id="duration-title" class="section-title">选择套餐时长</h2>
         <div class="duration-options">
-          <div class="duration-option active" role="radio" aria-checked="true">
+          <div class="duration-option" role="radio" tabindex="0" aria-checked="false" data-price="15.00" data-label="小火箭账号" data-duration="永久" data-qr="qr-15.jpg">
             <div class="option-details">
-              <span class="option-label">包月</span>
-              <span class="option-price">￥25.20/总价</span>
+              <span class="option-label">仅买小火箭账号</span>
+              <span class="option-price">￥15.00/个</span>
+            </div>
+          </div>
+          <div class="duration-option active" role="radio" tabindex="0" aria-checked="true" data-price="25.20" data-label="季度套餐" data-duration="3个月" data-qr="qr-25.jpg">
+            <div class="option-details">
+              <span class="option-label">季度套餐 (3个月)</span>
+              <span class="option-price">￥25.20/季</span>
+            </div>
+          </div>
+          <div class="duration-option" role="radio" tabindex="0" aria-checked="false" data-price="39.90" data-label="季度套餐+小火箭账号" data-duration="3个月+号" data-qr="qr-39.jpg">
+            <div class="option-details">
+              <span class="option-label">季度套餐+小火箭</span>
+              <span class="option-price">￥39.90/总价</span>
             </div>
             <div class="option-badge">当前推荐</div>
+          </div>
+          <div class="duration-option" role="radio" tabindex="0" aria-checked="false" data-price="99.00" data-label="年度套餐" data-duration="1年" data-qr="qr-99.jpg">
+            <div class="option-details">
+              <span class="option-label">年度套餐 (1年)</span>
+              <span class="option-price">￥99.00/年</span>
+            </div>
           </div>
         </div>
       </section>
@@ -175,18 +193,19 @@
             <h3 class="summary-title">订单摘要</h3>
             <div class="summary-details">
               <div class="summary-row">
-                <span class="summary-label">套餐标准会员</span>
-                <span class="summary-value">￥25.20/月</span>
+                <span class="summary-label" id="summary-plan-label">季度套餐 (3个月)</span>
+                <span class="summary-value" id="summary-plan-price">￥25.20/季</span>
               </div>
               <div class="summary-row">
-                <span class="summary-label">时长</span>
-                <span class="summary-value">30天</span>
+                <span class="summary-label">说明</span>
+                <span class="summary-value" id="summary-duration" style="font-size:13px; color:#64748b; font-weight:normal;">含3个月使用时长</span>
               </div>
               <hr class="summary-divider">
               <div class="summary-row total-row">
                 <span class="summary-label">总计</span>
-                <span class="summary-value">￥25.20</span>
+                <span class="summary-value" id="summary-total">￥25.20</span>
               </div>
+
             </div>
           </div>
 
@@ -286,7 +305,7 @@
             <strong>💡 支付流程指南：</strong><br>
             1. 请打开手机<strong>支付宝</strong>，扫描上方二维码。<br>
             2. 确认付款金额为 <strong>￥25.20</strong> 并完成付款。<br>
-            3. 付款成功后，系统将在 <strong>5-10 分钟</strong> 内自动将加速器账号凭证与使用说明发送至您的订阅邮箱。
+            3. 付款成功后，系统将在 <strong>5-10 分钟</strong> 内自动将订阅账号凭证（及小火箭账号，若购买）发送至您的订阅邮箱。
           </p>
         </div>
       </div>

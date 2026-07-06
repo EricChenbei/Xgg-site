@@ -21,6 +21,57 @@ document.addEventListener('DOMContentLoaded', () => {
   const successCloseBtn = document.getElementById('success-close-btn');
   const finishBtn = document.getElementById('finish-btn');
 
+  // Selected Plan State
+  let currentPlan = {
+    price: '25.20',
+    label: '季度套餐 (3个月)',
+    duration: '3个月',
+    qr: 'qr-25.jpg'
+  };
+
+  // Setup Plan Selection
+  const durationOptions = document.querySelectorAll('.duration-option');
+  const summaryPlanLabel = document.getElementById('summary-plan-label');
+  const summaryPlanPrice = document.getElementById('summary-plan-price');
+  const summaryDuration = document.getElementById('summary-duration');
+  const summaryTotal = document.getElementById('summary-total');
+
+  durationOptions.forEach(option => {
+    option.addEventListener('click', () => {
+      // Remove active class from all
+      durationOptions.forEach(opt => {
+        opt.classList.remove('active');
+        opt.setAttribute('aria-checked', 'false');
+      });
+      
+      // Add active to clicked
+      option.classList.add('active');
+      option.setAttribute('aria-checked', 'true');
+
+      // Update state
+      currentPlan = {
+        price: option.getAttribute('data-price'),
+        label: option.getAttribute('data-label'),
+        duration: option.getAttribute('data-duration'),
+        qr: option.getAttribute('data-qr')
+      };
+
+      // Update UI Summary
+      summaryPlanLabel.textContent = currentPlan.label;
+      summaryPlanPrice.textContent = `￥${currentPlan.price}`;
+      
+      if (currentPlan.label.includes('仅买小火箭')) {
+        summaryDuration.textContent = '含独立的小火箭美区账号';
+      } else if (currentPlan.label.includes('小火箭')) {
+        summaryDuration.textContent = `含${currentPlan.duration.split('+')[0]}使用时长 + 小火箭账号`;
+      } else {
+        summaryDuration.textContent = `含${currentPlan.duration}使用时长`;
+      }
+      
+      summaryTotal.textContent = `￥${currentPlan.price}`;
+    });
+  });
+
   // Stricter Email Format Regex
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
@@ -118,6 +169,15 @@ document.addEventListener('DOMContentLoaded', () => {
       registeredEmailSpan.textContent = email;
       
       // Open the elegant glassmorphic payment dialog modal
+      const qrImage = document.querySelector('.qr-image');
+      const amountVal = document.querySelector('.amount-val');
+      if (qrImage) {
+        qrImage.src = `assets/${currentPlan.qr}`;
+      }
+      if (amountVal) {
+        amountVal.textContent = `￥${currentPlan.price}`;
+      }
+      
       paymentDialog.showModal();
     }, 600); // Quick smooth delay for premium interactive feel
   });
@@ -184,10 +244,10 @@ document.addEventListener('DOMContentLoaded', () => {
             title: 'Xgg加速器 订单付款登记通知',
             customer_email: tempEmail,
             alipay_verification: payVerification, // Attach the user's manual payment verification info!
-            payment_status: '已手动确认支付 ￥25.20',
-            plan: '普通套餐',
-            duration: '30天',
-            price: '￥25.20',
+            payment_status: `已手动确认支付 ￥${currentPlan.price}`,
+            plan: currentPlan.label,
+            duration: currentPlan.duration,
+            price: `￥${currentPlan.price}`,
             recipient: 'larrymimo8@gmail.com'
           })
         });

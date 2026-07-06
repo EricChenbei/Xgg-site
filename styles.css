@@ -286,18 +286,30 @@ body {
 .duration-options {
   display: flex;
   flex-direction: column;
+  gap: 12px;
 }
 
 .duration-option {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 2px solid #4a72ff;
+  border: 2px solid #e2e8f0;
   border-radius: var(--border-radius-md);
   padding: 16px 20px;
-  background-color: rgba(74, 114, 255, 0.03);
+  background-color: #ffffff;
   position: relative;
-  cursor: default;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.duration-option:hover {
+  border-color: #a5b4fc;
+  background-color: #f8fafc;
+}
+
+.duration-option.active {
+  border-color: #4a72ff;
+  background-color: rgba(74, 114, 255, 0.03);
 }
 
 .option-details {
