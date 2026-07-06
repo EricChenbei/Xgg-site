@@ -345,4 +345,38 @@ document.addEventListener('DOMContentLoaded', () => {
       closeDialog();
     });
   }
+
+  /**
+   * Premium Toast Notification for Disabled Services
+   */
+  function showToast(message) {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'toast-container';
+      container.className = 'toast-container';
+      document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `
+      <span style="font-size: 16px;">⚠️</span>
+      <span>${message}</span>
+    `;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.classList.add('fade-out');
+      setTimeout(() => toast.remove(), 300);
+    }, 2500);
+  }
+
+  // Bind click event to disabled service options to show the toast
+  const disabledOptions = document.querySelectorAll('.service-option.disabled');
+  disabledOptions.forEach(opt => {
+    opt.addEventListener('click', () => {
+      showToast('该服务暂时无可用号码，请留意后续补货或选择其他服务！');
+    });
+  });
+
 });

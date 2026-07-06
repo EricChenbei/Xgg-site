@@ -1035,3 +1035,105 @@ dialog[open]::backdrop {
   border-radius: 6px;
   border: 1px dashed #cbd5e1;
 }
+
+/* Service Options */
+.service-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 2px solid #e2e8f0;
+  border-radius: var(--border-radius-md);
+  padding: 12px;
+  background-color: #ffffff;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.service-option:not(.disabled):hover {
+  border-color: #a5b4fc;
+  background-color: #f8fafc;
+  transform: translateY(-1px);
+}
+
+.service-option.disabled {
+  background-color: #f8fafc;
+  cursor: pointer;
+  border-color: #e2e8f0;
+  opacity: 0.8;
+}
+
+/* Shared Active State Animation (Duration & Service) */
+.selectable-option.active {
+  border-color: #4a72ff;
+  background-color: rgba(74, 114, 255, 0.03);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(74, 114, 255, 0.15);
+}
+
+.selectable-option.active::after {
+  content: '✓';
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: var(--primary-gradient);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  box-shadow: 0 4px 10px rgba(74,114,255,0.3);
+  animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes popIn {
+  0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+/* Toast Notification */
+.toast-container {
+  position: fixed;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.toast {
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 50px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(-20px) scale(0.95);
+  animation: toastEnter 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes toastEnter {
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.toast.fade-out {
+  animation: toastExit 0.3s ease-in forwards;
+}
+
+@keyframes toastExit {
+  to { opacity: 0; transform: translateY(-10px) scale(0.95); }
+}
