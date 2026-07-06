@@ -113,31 +113,138 @@
       <section class="card duration-card" aria-labelledby="duration-title">
         <h2 id="duration-title" class="section-title">选择套餐时长</h2>
         <div class="duration-options">
-          <div class="duration-option" role="radio" tabindex="0" aria-checked="false" data-price="15.00" data-label="小火箭账号" data-duration="永久" data-qr="qr-15.jpg">
+          <div class="duration-option selectable-option" role="radio" tabindex="0" aria-checked="false" data-price="15.00" data-label="小火箭账号" data-duration="永久" data-qr="qr-15.jpg">
             <div class="option-details">
               <span class="option-label">仅买小火箭账号</span>
               <span class="option-price">￥15.00/个</span>
             </div>
           </div>
-          <div class="duration-option active" role="radio" tabindex="0" aria-checked="true" data-price="25.20" data-label="季度套餐" data-duration="3个月" data-qr="qr-25.jpg">
+          <div class="duration-option selectable-option active" role="radio" tabindex="0" aria-checked="true" data-price="25.20" data-label="季度套餐" data-duration="3个月" data-qr="qr-25.jpg">
             <div class="option-details">
               <span class="option-label">季度套餐 (3个月)</span>
               <span class="option-price">￥25.20/季</span>
             </div>
           </div>
-          <div class="duration-option" role="radio" tabindex="0" aria-checked="false" data-price="39.90" data-label="季度套餐+小火箭账号" data-duration="3个月+号" data-qr="qr-39.jpg">
+          <div class="duration-option selectable-option" role="radio" tabindex="0" aria-checked="false" data-price="39.90" data-label="季度套餐+小火箭账号" data-duration="3个月+号" data-qr="qr-39.jpg">
             <div class="option-details">
               <span class="option-label">季度套餐+小火箭</span>
               <span class="option-price">￥39.90/总价</span>
             </div>
             <div class="option-badge">当前推荐</div>
           </div>
-          <div class="duration-option" role="radio" tabindex="0" aria-checked="false" data-price="99.00" data-label="年度套餐" data-duration="1年" data-qr="qr-99.jpg">
+          <div class="duration-option selectable-option" role="radio" tabindex="0" aria-checked="false" data-price="99.00" data-label="年度套餐" data-duration="1年" data-qr="qr-99.jpg">
             <div class="option-details">
               <span class="option-label">年度套餐 (1年)</span>
               <span class="option-price">￥99.00/年</span>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- Long-term Phone Number Verification Card -->
+      <section class="card service-card" aria-labelledby="service-title">
+        <h2 id="service-title" class="section-title">长效电话接码 <span class="badge" style="font-size: 12px; background: var(--primary-gradient); color: white; padding: 2px 8px; border-radius: 12px; margin-left: 8px;">有效期12个月</span></h2>
+        <div class="service-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 15px;">
+          
+          <!-- Line -->
+          <div class="service-option selectable-option" role="radio" tabindex="0" aria-checked="false" data-price="38.00" data-label="Line 接码" data-duration="12个月" data-qr="qr-38.jpg" data-type="service">
+            <div class="service-option-content">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/LINE_logo.svg" alt="Line" class="service-icon" style="width: 24px; height: 24px;">
+              <div class="service-info" style="display: flex; flex-direction: column; margin-left: 10px;">
+                <span class="service-name" style="font-weight: bold; font-size: 14px;">Line</span>
+                <span class="service-stock" style="font-size: 12px; color: #10b981;">30个 (美国区号)</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Codex -->
+          <div class="service-option selectable-option" role="radio" tabindex="0" aria-checked="false" data-price="38.00" data-label="Codex 接码" data-duration="12个月" data-qr="qr-38.jpg" data-type="service">
+            <div class="service-option-content">
+              <span class="service-icon" style="font-size: 24px;">👨‍💻</span>
+              <div class="service-info" style="display: flex; flex-direction: column; margin-left: 10px;">
+                <span class="service-name" style="font-weight: bold; font-size: 14px;">Codex</span>
+                <span class="service-stock" style="font-size: 12px; color: #10b981;">24个 (美国区号)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Instagram -->
+          <div class="service-option disabled" role="radio" tabindex="-1" aria-checked="false" aria-disabled="true">
+            <div class="service-option-content">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg" alt="Instagram" class="service-icon" style="width: 24px; height: 24px;">
+              <div class="service-info" style="display: flex; flex-direction: column; margin-left: 10px;">
+                <span class="service-name" style="font-weight: bold; font-size: 14px; color: #94a3b8;">Instagram</span>
+                <span class="service-stock" style="font-size: 12px; color: #ef4444;">暂无可用号码</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- WhatsApp -->
+          <div class="service-option disabled" role="radio" tabindex="-1" aria-checked="false" aria-disabled="true">
+            <div class="service-option-content">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" class="service-icon" style="width: 24px; height: 24px;">
+              <div class="service-info" style="display: flex; flex-direction: column; margin-left: 10px;">
+                <span class="service-name" style="font-weight: bold; font-size: 14px; color: #94a3b8;">WhatsApp</span>
+                <span class="service-stock" style="font-size: 12px; color: #ef4444;">暂无可用号码</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gmail -->
+          <div class="service-option disabled" role="radio" tabindex="-1" aria-checked="false" aria-disabled="true">
+            <div class="service-option-content">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Gmail" class="service-icon" style="width: 24px; height: 24px;">
+              <div class="service-info" style="display: flex; flex-direction: column; margin-left: 10px;">
+                <span class="service-name" style="font-weight: bold; font-size: 14px; color: #94a3b8;">谷歌邮箱</span>
+                <span class="service-stock" style="font-size: 12px; color: #ef4444;">暂无可用号码</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Claude -->
+          <div class="service-option disabled" role="radio" tabindex="-1" aria-checked="false" aria-disabled="true">
+            <div class="service-option-content">
+              <span class="service-icon" style="font-size: 24px; color: #94a3b8;">🤖</span>
+              <div class="service-info" style="display: flex; flex-direction: column; margin-left: 10px;">
+                <span class="service-name" style="font-weight: bold; font-size: 14px; color: #94a3b8;">Claude</span>
+                <span class="service-stock" style="font-size: 12px; color: #ef4444;">暂无可用号码</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ChatGPT -->
+          <div class="service-option disabled" role="radio" tabindex="-1" aria-checked="false" aria-disabled="true">
+            <div class="service-option-content">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" alt="ChatGPT" class="service-icon" style="width: 24px; height: 24px; filter: grayscale(100%); opacity: 0.5;">
+              <div class="service-info" style="display: flex; flex-direction: column; margin-left: 10px;">
+                <span class="service-name" style="font-weight: bold; font-size: 14px; color: #94a3b8;">ChatGPT</span>
+                <span class="service-stock" style="font-size: 12px; color: #ef4444;">暂无可用号码</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TikTok -->
+          <div class="service-option disabled" role="radio" tabindex="-1" aria-checked="false" aria-disabled="true">
+            <div class="service-option-content">
+              <img src="https://upload.wikimedia.org/wikipedia/en/a/a9/TikTok_logo.svg" alt="TikTok" class="service-icon" style="width: 24px; height: 24px; filter: grayscale(100%); opacity: 0.5;">
+              <div class="service-info" style="display: flex; flex-direction: column; margin-left: 10px;">
+                <span class="service-name" style="font-weight: bold; font-size: 14px; color: #94a3b8;">TikTok</span>
+                <span class="service-stock" style="font-size: 12px; color: #ef4444;">暂无可用号码</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reddit -->
+          <div class="service-option disabled" role="radio" tabindex="-1" aria-checked="false" aria-disabled="true">
+            <div class="service-option-content">
+              <img src="https://upload.wikimedia.org/wikipedia/en/5/58/Reddit_logo_new.svg" alt="Reddit" class="service-icon" style="width: 24px; height: 24px; filter: grayscale(100%); opacity: 0.5;">
+              <div class="service-info" style="display: flex; flex-direction: column; margin-left: 10px;">
+                <span class="service-name" style="font-weight: bold; font-size: 14px; color: #94a3b8;">Reddit</span>
+                <span class="service-stock" style="font-size: 12px; color: #ef4444;">暂无可用号码</span>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 

@@ -30,16 +30,16 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // Setup Plan Selection
-  const durationOptions = document.querySelectorAll('.duration-option');
+  const selectableOptions = document.querySelectorAll('.selectable-option');
   const summaryPlanLabel = document.getElementById('summary-plan-label');
   const summaryPlanPrice = document.getElementById('summary-plan-price');
   const summaryDuration = document.getElementById('summary-duration');
   const summaryTotal = document.getElementById('summary-total');
 
-  durationOptions.forEach(option => {
+  selectableOptions.forEach(option => {
     option.addEventListener('click', () => {
       // Remove active class from all
-      durationOptions.forEach(opt => {
+      selectableOptions.forEach(opt => {
         opt.classList.remove('active');
         opt.setAttribute('aria-checked', 'false');
       });
@@ -53,14 +53,17 @@ document.addEventListener('DOMContentLoaded', () => {
         price: option.getAttribute('data-price'),
         label: option.getAttribute('data-label'),
         duration: option.getAttribute('data-duration'),
-        qr: option.getAttribute('data-qr')
+        qr: option.getAttribute('data-qr'),
+        type: option.getAttribute('data-type') || 'duration'
       };
 
       // Update UI Summary
       summaryPlanLabel.textContent = currentPlan.label;
       summaryPlanPrice.textContent = `￥${currentPlan.price}`;
       
-      if (currentPlan.label.includes('仅买小火箭')) {
+      if (currentPlan.type === 'service') {
+        summaryDuration.textContent = '通过您的订阅邮箱自动发货';
+      } else if (currentPlan.label.includes('仅买小火箭')) {
         summaryDuration.textContent = '含独立的小火箭美区账号';
       } else if (currentPlan.label.includes('小火箭')) {
         summaryDuration.textContent = `含${currentPlan.duration.split('+')[0]}使用时长 + 小火箭账号`;
