@@ -263,6 +263,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (response.ok) {
         closeDialog();
+        
+        // Setup success dialog content based on plan type
+        const vpnContent = document.getElementById('success-vpn-content');
+        const serviceContent = document.getElementById('success-service-content');
+        const subtitle = document.getElementById('success-dialog-subtitle');
+
+        if (currentPlan.type === 'service' || currentPlan.label.includes('仅买小火箭')) {
+          vpnContent.style.display = 'none';
+          serviceContent.style.display = 'block';
+          subtitle.style.display = 'none';
+        } else {
+          vpnContent.style.display = 'block';
+          serviceContent.style.display = 'none';
+          subtitle.style.display = 'block';
+        }
+
         // Show success and subscription links dialog
         successDialog.showModal();
       } else {
