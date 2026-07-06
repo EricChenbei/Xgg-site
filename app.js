@@ -261,44 +261,37 @@ document.addEventListener('DOMContentLoaded', () => {
         response = { ok: true };
       }
 
-      if (response.ok) {
-        closeDialog();
-        
-        // Setup success dialog content based on plan type
-        const vpnContent = document.getElementById('success-vpn-content');
-        const serviceContent = document.getElementById('success-service-content');
-        const subtitle = document.getElementById('success-dialog-subtitle');
-
-        if (currentPlan.type === 'service' || currentPlan.label.includes('仅买小火箭')) {
-          vpnContent.style.display = 'none';
-          serviceContent.style.display = 'block';
-          subtitle.style.display = 'none';
-        } else {
-          vpnContent.style.display = 'block';
-          serviceContent.style.display = 'none';
-          subtitle.style.display = 'block';
-        }
-
-        // Show success and subscription links dialog
-        successDialog.showModal();
-      } else {
-        throw new Error('Notification transmission failed');
+      // We don't throw error on !response.ok because we want the user to see the success UI regardless.
+      if (!response.ok) {
+        console.warn('Formspree responded with an error, but proceeding to show success UI to user.');
       }
 
     } catch (err) {
       console.warn('Network request failed, standard fallback executed.', err);
-      closeDialog();
-      // Even if network fails, don't lock customer out, warn them gracefully
-      alert('登记通知已记录。如果您的账号未在 10 分钟内发送至您的邮箱，请随时发送邮件至 larrymimo8@gmail.com 联系客服处理！');
-      
-      form.reset();
-      emailInput.classList.remove('custom-invalid');
-      confirmInput.classList.remove('custom-invalid');
-      tempEmail = '';
     } finally {
       // Restore button status
       confirmPaymentBtn.disabled = false;
       confirmPaymentBtn.textContent = originalText;
+      
+      closeDialog();
+      
+      // Setup success dialog content based on plan type
+      const vpnContent = document.getElementById('success-vpn-content');
+      const serviceContent = document.getElementById('success-service-content');
+      const subtitle = document.getElementById('success-dialog-subtitle');
+
+      if (currentPlan.type === 'service' || currentPlan.label.includes('仅买小火箭')) {
+        vpnContent.style.display = 'none';
+        serviceContent.style.display = 'block';
+        subtitle.style.display = 'none';
+      } else {
+        vpnContent.style.display = 'block';
+        serviceContent.style.display = 'none';
+        subtitle.style.display = 'block';
+      }
+
+      // Show success and subscription links dialog
+      successDialog.showModal();
     }
   });
 
