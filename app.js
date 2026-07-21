@@ -4,8 +4,6 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('purchase-form');
-  const emailInput = document.getElementById('email');
-  const confirmInput = document.getElementById('confirm-email');
   const submitBtn = document.getElementById('submit-btn');
   const spinner = submitBtn.querySelector('.btn-spinner');
   const btnText = submitBtn.querySelector('.btn-text');
@@ -75,91 +73,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Stricter Email Format Regex
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-  /**
-   * Sync native validation status with ARIA attributes (from modern guidance)
-   */
-  const syncAria = (el) => {
-    const isInvalid = el.matches(':user-invalid') || el.classList.contains('custom-invalid');
-    el.setAttribute('aria-invalid', isInvalid ? 'true' : 'false');
-  };
-
-  /**
-   * Real-time Email Matching and Format Verification
-   */
-  const validateEmails = () => {
-    const email = emailInput.value.trim();
-    const confirmVal = confirmInput.value.trim();
-    
-    let isValid = true;
-
-    // 1. Validate main email format
-    if (email && !emailRegex.test(email)) {
-      emailInput.classList.add('custom-invalid');
-      isValid = false;
-    } else {
-      emailInput.classList.remove('custom-invalid');
-    }
-    
-    // 2. Validate confirmation match
-    if (confirmVal) {
-      if (email !== confirmVal) {
-        confirmInput.classList.add('custom-invalid');
-        isValid = false;
-      } else {
-        confirmInput.classList.remove('custom-invalid');
-      }
-    } else {
-      confirmInput.classList.remove('custom-invalid');
-    }
-
-    syncAria(emailInput);
-    syncAria(confirmInput);
-
-    return isValid;
-  };
-
-  // Real-time feedback listeners
-  emailInput.addEventListener('input', validateEmails);
-  confirmInput.addEventListener('input', validateEmails);
-  emailInput.addEventListener('blur', validateEmails);
-  confirmInput.addEventListener('blur', validateEmails);
-
   // Variable to store email during modal checkout
   let tempEmail = '';
 
   /**
-   * Form Submission Logic: Shows the Payment QR Modal first (does NOT email yet)
+   * Form Submission Logic: Shows the Payment QR Modal first
    */
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    
-    const email = emailInput.value.trim();
-    const confirmVal = confirmInput.value.trim();
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const auth = window.getAuth ? window.getAuth() : null;
+      if (!auth || !auth.currentUser) {
+        // User is not logged in, show auth dialog
+        const authDialog = document.getElementById('auth-dialog');
+        if (authDialog) authDialog.showModal();
+        return;
+      }
+      
+      const email = auth.currentUser.email;
 
-    // Final checks before submission
-    if (!email) {
-      emailInput.classList.add('custom-invalid');
-      emailInput.focus();
-      return;
-    }
-    if (!confirmVal) {
-      confirmInput.classList.add('custom-invalid');
-      confirmInput.focus();
-      return;
-    }
-    
-    if (!emailRegex.test(email) || email !== confirmVal) {
-      validateEmails();
-      return;
-    }
-
-    // Toggle button state to loading temporarily for visual feedback
-    submitBtn.disabled = true;
-    spinner.classList.remove('hidden');
-    btnText.textContent = '正在进入付款...';
+      // Toggle button state to loading temporarily for visual feedback
+      submitBtn.disabled = true;
+      spinner.classList.remove('hidden');
+      btnText.textContent = '正在进入付款...';
 
     setTimeout(() => {
       // Restore button status
@@ -246,7 +183,8 @@ document.addEventListener('DOMContentLoaded', () => {
           body: JSON.stringify({
             title: 'Xgg加速器 订单付款登记通知',
             customer_email: tempEmail,
-            alipay_verification: payVerification, // Attach the user's manual payment verification info!
+            user_uid: window.getAuth && window.getAuth().currentUser ? window.getAuth().currentUser.uid : 'Guest',
+            alipay_verification: payVerification,
             payment_status: `已手动确认支付 ￥${currentPlan.price}`,
             plan: currentPlan.label,
             duration: currentPlan.duration,
@@ -302,10 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
     successDialog.close();
     form.reset();
     payVerificationInput.value = '';
-    emailInput.classList.remove('custom-invalid');
-    confirmInput.classList.remove('custom-invalid');
     payVerificationInput.classList.remove('custom-invalid');
-    tempEmail = '';
     confirmPaymentBtn.disabled = true;
   };
 

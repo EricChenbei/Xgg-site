@@ -42,6 +42,11 @@
         <span class="logo-text">Xgg加速器</span>
       </div>
       
+      <!-- Auth / Dashboard Button -->
+      <button id="header-auth-btn" class="header-auth-btn">
+        <span>🔒 登录 / 注册</span>
+      </button>
+      
       <!-- Refund Alert Badge Bar -->
       <div class="alert-bar" id="refund-badge">
         <span class="alert-emoji">📣</span>
@@ -258,29 +263,9 @@
         <form id="purchase-form" novalidate>
           <h2 id="form-title" class="sr-only">订单信息填写</h2>
           
-          <!-- Email Input Field -->
-          <div class="form-group">
-            <label for="email" class="form-label">邮箱地址</label>
-            <div class="input-wrapper">
-              <input type="email" id="email" class="form-input" placeholder="请输入您的邮箱地址" required
-                     pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
-                     aria-describedby="email-rules email-error">
-              <span class="input-icon">✉️</span>
-            </div>
-            <div class="rules-list" id="email-rules">请填写有效的电子邮箱地址，以便接收账户凭证。</div>
-            <div class="error-msg" id="email-error">请输入格式正确的邮箱地址 (例如: name@example.com)。</div>
-          </div>
-
-          <!-- Confirm Email Input Field -->
-          <div class="form-group">
-            <label for="confirm-email" class="form-label">确认邮箱</label>
-            <div class="input-wrapper">
-              <input type="email" id="confirm-email" class="form-input" placeholder="请再次输入邮箱地址" required
-                     aria-describedby="confirm-rules confirm-error">
-              <span class="input-icon">✔️</span>
-            </div>
-            <div class="rules-list" id="confirm-rules">两次输入的邮箱地址必须一致。</div>
-            <div class="error-msg" id="confirm-error">两次输入的邮箱地址不一致。</div>
+          <!-- Auth Handled Check (Hidden) -->
+          <div class="auth-required-banner" style="background: rgba(74, 114, 255, 0.05); padding: 12px; border-radius: 8px; border: 1px dashed #4a72ff; margin-bottom: 20px; font-size: 13px; color: #4a72ff; text-align: center;">
+            需登录后才能购买，购买凭证和节点将直接发放到您的账号
           </div>
 
           <!-- Payment Selection -->
@@ -495,6 +480,51 @@
     </div>
   </dialog>
 
+  <!-- Auth Modal -->
+  <dialog id="auth-dialog" class="custom-dialog">
+    <div class="dialog-content auth-dialog-content">
+      <button type="button" id="auth-close-btn" class="close-btn" aria-label="关闭">×</button>
+      <h2 class="dialog-title" id="auth-title">登录账号</h2>
+      <form id="auth-form" class="payment-form">
+        <div class="form-group">
+          <label for="auth-email">邮箱账号</label>
+          <input type="email" id="auth-email" class="custom-input" placeholder="输入您的邮箱" required>
+        </div>
+        <div class="form-group" style="margin-top: 15px;">
+          <label for="auth-password">密码</label>
+          <input type="password" id="auth-password" class="custom-input" placeholder="输入密码 (不少于6位)" required minlength="6">
+        </div>
+        <div id="auth-error" class="auth-error-msg" style="color: #ef4444; font-size: 14px; margin-top: 10px; text-align: center;"></div>
+        <div class="dialog-footer" style="margin-top: 20px;">
+          <button type="submit" id="auth-submit-btn" class="dialog-btn primary-btn" style="width: 100%;">登 录</button>
+        </div>
+        <div class="auth-toggle-wrap" style="text-align: center; margin-top: 15px; font-size: 14px; color: #64748b;">
+          <span id="auth-toggle-text">还没有账号？</span>
+          <a href="#" id="auth-toggle-link" style="color: #4A72FF; text-decoration: none; font-weight: 500;">立即注册</a>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Dashboard Modal -->
+  <dialog id="dashboard-dialog" class="custom-dialog">
+    <div class="dialog-content dashboard-dialog-content" style="max-width: 500px;">
+      <button type="button" id="dashboard-close-btn" class="close-btn" aria-label="关闭">×</button>
+      <div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 class="dialog-title" style="margin-bottom: 0;">👤 个人中心</h2>
+        <button id="logout-btn" class="logout-btn" style="background: none; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; color: #64748b; cursor: pointer; font-size: 14px; transition: all 0.2s;">退出登录</button>
+      </div>
+      <div id="dashboard-content" class="dashboard-body" style="max-height: 60vh; overflow-y: auto;">
+        <!-- Dynamic content injected by JS -->
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="auth.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
