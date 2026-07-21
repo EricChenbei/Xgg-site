@@ -28,8 +28,7 @@ const authError = document.getElementById('auth-error');
 const authSuccess = document.getElementById('auth-success');
 const forgotPasswordLink = document.getElementById('forgot-password-link');
 
-const dashboardDialog = document.getElementById('dashboard-dialog');
-const closeDashboardBtn = document.getElementById('dashboard-close-btn');
+// Removed dashboardDialog
 const logoutBtn = document.getElementById('logout-btn');
 const dashboardContent = document.getElementById('dashboard-content');
 
@@ -89,8 +88,7 @@ if (forgotPasswordLink) {
 if (authBtn) {
   authBtn.addEventListener('click', () => {
     if (auth.currentUser) {
-      dashboardDialog.showModal();
-      loadDashboardData();
+      if (window.switchToQueryTab) window.switchToQueryTab();
     } else {
       authDialog.classList.remove('hidden');
     }
@@ -100,9 +98,7 @@ if (authBtn) {
 if (closeAuthBtn) {
   closeAuthBtn.addEventListener('click', () => authDialog.classList.add('hidden'));
 }
-if (closeDashboardBtn) {
-  closeDashboardBtn.addEventListener('click', () => dashboardDialog.close());
-}
+// closeDashboardBtn removed
 
 // Handle Auth Form Submission
 if (authForm) {
@@ -142,7 +138,8 @@ if (authForm) {
 if (logoutBtn) {
   logoutBtn.addEventListener('click', async () => {
     await auth.signOut();
-    dashboardDialog.close();
+    const tabBuy = document.getElementById('tab-buy');
+    if (tabBuy) tabBuy.click();
   });
 }
 
@@ -259,3 +256,4 @@ async function loadDashboardData() {
 // Export for app.js usage
 window.getAuth = () => auth;
 window.getDb = () => db;
+window.loadDashboardData = loadDashboardData;

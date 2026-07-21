@@ -19,6 +19,56 @@ document.addEventListener('DOMContentLoaded', () => {
   const successCloseBtn = document.getElementById('success-close-btn');
   const finishBtn = document.getElementById('finish-btn');
 
+  // Tab Switching Logic
+  const tabBuy = document.getElementById('tab-buy');
+  const tabQuery = document.getElementById('tab-query');
+  const planView = document.getElementById('plan-view');
+  const dashboardView = document.getElementById('dashboard-view');
+  const durationCard = document.querySelector('.duration-card');
+  const formCard = document.querySelector('.form-card');
+
+  // Expose function for header auth button to switch tabs
+  window.switchToQueryTab = () => {
+    if (tabQuery) tabQuery.click();
+  };
+
+  if (tabBuy && tabQuery) {
+    tabBuy.addEventListener('click', () => {
+      tabBuy.classList.add('active');
+      tabBuy.setAttribute('aria-selected', 'true');
+      tabQuery.classList.remove('active');
+      tabQuery.setAttribute('aria-selected', 'false');
+
+      if (planView) planView.classList.remove('hidden');
+      if (dashboardView) dashboardView.classList.add('hidden');
+      if (durationCard) durationCard.style.display = 'block';
+      if (formCard) formCard.style.display = 'block';
+    });
+
+    tabQuery.addEventListener('click', () => {
+      const auth = window.getAuth ? window.getAuth() : null;
+      if (!auth || !auth.currentUser) {
+        const loginOverlay = document.getElementById('login-overlay');
+        if (loginOverlay) loginOverlay.classList.remove('hidden');
+        return;
+      }
+
+      tabQuery.classList.add('active');
+      tabQuery.setAttribute('aria-selected', 'true');
+      tabBuy.classList.remove('active');
+      tabBuy.setAttribute('aria-selected', 'false');
+
+      if (planView) planView.classList.add('hidden');
+      if (dashboardView) dashboardView.classList.remove('hidden');
+      if (durationCard) durationCard.style.display = 'none';
+      if (formCard) formCard.style.display = 'none';
+
+      if (window.loadDashboardData) {
+        window.loadDashboardData();
+      }
+    });
+  }
+
   // Selected Plan State
   let currentPlan = {
     price: '25.20',

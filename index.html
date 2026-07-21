@@ -60,12 +60,14 @@
       <section class="card package-card" aria-labelledby="plan-title">
         <div class="card-header">
           <div class="plan-tabs">
-            <button class="plan-tab active" aria-selected="true">普通套餐</button>
-            <button class="plan-tab disabled" aria-selected="false" disabled>高级套餐</button>
+            <button class="plan-tab active" aria-selected="true" id="tab-buy">购买套餐</button>
+            <button class="plan-tab" aria-selected="false" id="tab-query">订阅查询</button>
           </div>
         </div>
         <div class="card-body">
-          <h2 id="plan-title" class="plan-name">普通套餐</h2>
+          <!-- Plan View -->
+          <div id="plan-view">
+            <h2 id="plan-title" class="plan-name">普通套餐</h2>
           
           <div class="price-container">
             <span class="currency">￥</span>
@@ -111,8 +113,21 @@
               <span>快速客服响应</span>
             </li>
           </ul>
+          </div>
+          
+          <!-- Dashboard View -->
+          <div id="dashboard-view" class="hidden" style="min-height: 150px;">
+            <div id="dashboard-content">
+              <!-- Dynamically populated by loadDashboardData() -->
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+              <button id="logout-btn" class="logout-btn" style="background: none; border: 1px solid #e2e8f0; padding: 6px 16px; border-radius: 6px; color: #64748b; cursor: pointer; font-size: 14px; transition: all 0.2s;">退出登录</button>
+            </div>
+          </div>
         </div>
       </section>
+
 
       <!-- Duration Selection Card (Locked to 1 Month) -->
       <section class="card duration-card" aria-labelledby="duration-title">
@@ -514,19 +529,7 @@
     </div>
   </div>
 
-  <!-- Dashboard Modal -->
-  <dialog id="dashboard-dialog" class="custom-dialog">
-    <div class="dialog-content dashboard-dialog-content" style="max-width: 500px;">
-      <button type="button" id="dashboard-close-btn" class="close-btn" aria-label="关闭">×</button>
-      <div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 class="dialog-title" style="margin-bottom: 0;">👤 个人中心</h2>
-        <button id="logout-btn" class="logout-btn" style="background: none; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; color: #64748b; cursor: pointer; font-size: 14px; transition: all 0.2s;">退出登录</button>
-      </div>
-      <div id="dashboard-content" class="dashboard-body" style="max-height: 60vh; overflow-y: auto;">
-        <!-- Dynamic content injected by JS -->
-      </div>
-    </div>
-  </dialog>
+
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
