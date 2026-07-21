@@ -86,8 +86,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const auth = window.getAuth ? window.getAuth() : null;
       if (!auth || !auth.currentUser) {
         // User is not logged in, show auth dialog
-        const authDialog = document.getElementById('auth-dialog');
-        if (authDialog) authDialog.showModal();
+        const authDialog = document.getElementById('login-overlay');
+        if (authDialog) authDialog.classList.remove('hidden');
         return;
       }
       
@@ -98,31 +98,30 @@ document.addEventListener('DOMContentLoaded', () => {
       spinner.classList.remove('hidden');
       btnText.textContent = '正在进入付款...';
 
-    setTimeout(() => {
-      // Restore button status
-      submitBtn.disabled = false;
-      spinner.classList.add('hidden');
-      btnText.textContent = '立即购买';
+      setTimeout(() => {
+        // Restore button status
+        submitBtn.disabled = false;
+        spinner.classList.add('hidden');
+        btnText.textContent = '立即购买';
 
-      // Store the verified email
-      tempEmail = email;
-      registeredEmailSpan.textContent = email;
-      
-      // Open the elegant glassmorphic payment dialog modal
-      const qrImage = document.querySelector('.qr-image');
-      const amountVal = document.querySelector('.amount-val');
-      if (qrImage) {
-        qrImage.src = `assets/${currentPlan.qr}`;
-      }
-      if (amountVal) {
-        amountVal.textContent = `￥${currentPlan.price}`;
-      }
-      
-      paymentDialog.showModal();
-    }, 600); // Quick smooth delay for premium interactive feel
-  });
-
-  /**
+        // Store the verified email
+        tempEmail = email;
+        registeredEmailSpan.textContent = email;
+        
+        // Open the elegant glassmorphic payment dialog modal
+        const qrImage = document.querySelector('.qr-image');
+        const amountVal = document.querySelector('.amount-val');
+        if (qrImage) {
+          qrImage.src = `assets/${currentPlan.qr}`;
+        }
+        if (amountVal) {
+          amountVal.textContent = `￥${currentPlan.price}`;
+        }
+        
+        paymentDialog.showModal();
+      }, 600); // Quick smooth delay for premium interactive feel
+    });
+  }  /**
    * Modal Close Handlers
    */
   const closeDialog = () => {

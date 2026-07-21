@@ -17,7 +17,7 @@ const db = firebase.firestore();
 
 // DOM Elements
 const authBtn = document.getElementById('header-auth-btn');
-const authDialog = document.getElementById('auth-dialog');
+const authDialog = document.getElementById('login-overlay');
 const closeAuthBtn = document.getElementById('auth-close-btn');
 const authForm = document.getElementById('auth-form');
 const authTitle = document.getElementById('auth-title');
@@ -25,6 +25,8 @@ const authSubmitBtn = document.getElementById('auth-submit-btn');
 const authToggleText = document.getElementById('auth-toggle-text');
 const authToggleLink = document.getElementById('auth-toggle-link');
 const authError = document.getElementById('auth-error');
+const authSuccess = document.getElementById('auth-success');
+const forgotPasswordLink = document.getElementById('forgot-password-link');
 
 const dashboardDialog = document.getElementById('dashboard-dialog');
 const closeDashboardBtn = document.getElementById('dashboard-close-btn');
@@ -38,7 +40,8 @@ if (authToggleLink) {
   authToggleLink.addEventListener('click', (e) => {
     e.preventDefault();
     isLoginMode = !isLoginMode;
-    authError.textContent = '';
+    authError.style.display = 'none';
+    authSuccess.style.display = 'none';
     if (isLoginMode) {
       authTitle.textContent = '登录账号';
       authSubmitBtn.textContent = '登 录';
@@ -53,6 +56,35 @@ if (authToggleLink) {
   });
 }
 
+if (forgotPasswordLink) {
+  forgotPasswordLink.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('auth-email').value.trim();
+    if (!email) {
+      authError.textContent = '请输入您的邮箱账号，然后再点击忘记密码';
+      authError.style.display = 'block';
+      authSuccess.style.display = 'none';
+      return;
+    }
+    try {
+      authSubmitBtn.disabled = true;
+      authSubmitBtn.textContent = '发送中...';
+      await auth.sendPasswordResetEmail(email);
+      authError.style.display = 'none';
+      authSuccess.textContent = '重置密码邮件已发送，请检查您的邮箱！';
+      authSuccess.style.display = 'block';
+    } catch (error) {
+      console.error(error);
+      authSuccess.style.display = 'none';
+      authError.textContent = '发送失败：' + error.message;
+      authError.style.display = 'block';
+    } finally {
+      authSubmitBtn.disabled = false;
+      authSubmitBtn.textContent = isLoginMode ? '登 录' : '注 册';
+    }
+  });
+}
+
 // Auth Modal Open/Close
 if (authBtn) {
   authBtn.addEventListener('click', () => {
@@ -60,13 +92,13 @@ if (authBtn) {
       dashboardDialog.showModal();
       loadDashboardData();
     } else {
-      authDialog.showModal();
+      authDialog.classList.remove('hidden');
     }
   });
 }
 
 if (closeAuthBtn) {
-  closeAuthBtn.addEventListener('click', () => authDialog.close());
+  closeAuthBtn.addEventListener('click', () => authDialog.classList.add('hidden'));
 }
 if (closeDashboardBtn) {
   closeDashboardBtn.addEventListener('click', () => dashboardDialog.close());
@@ -81,7 +113,8 @@ if (authForm) {
     
     authSubmitBtn.disabled = true;
     authSubmitBtn.textContent = '处理中...';
-    authError.textContent = '';
+    authError.style.display = 'none';
+    authSuccess.style.display = 'none';
 
     try {
       if (isLoginMode) {
@@ -89,10 +122,11 @@ if (authForm) {
       } else {
         await auth.createUserWithEmailAndPassword(email, password);
       }
-      authDialog.close();
+      authDialog.classList.add('hidden');
       authForm.reset();
     } catch (error) {
       console.error(error);
+      authError.style.display = 'block';
       if (error.code === 'auth/email-already-in-use') authError.textContent = '该邮箱已被注册';
       else if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') authError.textContent = '邮箱或密码错误';
       else if (error.code === 'auth/weak-password') authError.textContent = '密码不能少于6位';
@@ -115,11 +149,14 @@ if (logoutBtn) {
 // Auth State Observer
 auth.onAuthStateChanged((user) => {
   if (user) {
+    if (authDialog) authDialog.classList.add('hidden');
     if (authBtn) {
       authBtn.innerHTML = `<span>👤 我的账号</span>`;
       authBtn.classList.add('logged-in');
     }
   } else {
+    // Show mandatory login on load
+    if (authDialog) authDialog.classList.remove('hidden');
     if (authBtn) {
       authBtn.innerHTML = `<span>🔒 登录 / 注册</span>`;
       authBtn.classList.remove('logged-in');
