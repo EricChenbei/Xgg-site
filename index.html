@@ -425,75 +425,7 @@
   </dialog>
 
   <!-- Success & Subscription Links Dialog -->
-  <dialog id="success-dialog" closedby="any" aria-labelledby="success-dialog-title">
-    <div class="dialog-content">
-      
-      <button type="button" class="dialog-close-btn" id="success-close-btn" aria-label="关闭弹窗">×</button>
-      
-      <div class="dialog-header">
-        <div class="success-badge">
-          <svg class="success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        </div>
-        <h2 id="success-dialog-title" class="dialog-title">付款已登记！</h2>
-        <p id="success-dialog-subtitle" class="dialog-subtitle">请复制以下订阅地址到您的客户端中</p>
-      </div>
 
-      <div class="dialog-body">
-        
-        <div id="success-vpn-content">
-          <div class="subscription-item">
-          <div class="sub-header">
-            <span class="sub-title">通用订阅地址</span>
-            <button class="copy-btn" data-clipboard="https://36494.xueshanlink.com/api/xueshanlink/08c0ca2b585f53af0d0b29e731f7119c">点击复制</button>
-          </div>
-          <div class="sub-link">https://36494.xueshanlink.com/api/xueshanlink/08c0ca2b585f53af0d0b29e731f7119c</div>
-        </div>
-
-        <div class="subscription-item">
-          <div class="sub-header">
-            <span class="sub-title">HY2 协议地址</span>
-            <button class="copy-btn" data-clipboard="https://36494.xueshanlink.com/api/xueshanlink/08c0ca2b585f53af0d0b29e731f7119c&types=hysteria2">点击复制</button>
-          </div>
-          <div class="sub-link">https://36494.xueshanlink.com/api/xueshanlink/08c0ca2b585f53af0d0b29e731f7119c&types=hysteria2</div>
-        </div>
-
-        <div class="subscription-item">
-          <div class="sub-header">
-            <span class="sub-title">Vless 协议地址</span>
-            <button class="copy-btn" data-clipboard="https://36494.xueshanlink.com/api/xueshanlink/08c0ca2b585f53af0d0b29e731f7119c&types=vless">点击复制</button>
-          </div>
-          <div class="sub-link">https://36494.xueshanlink.com/api/xueshanlink/08c0ca2b585f53af0d0b29e731f7119c&types=vless</div>
-        </div>
-
-          <div class="qr-container" style="margin-top: 20px;">
-            <div class="alipay-header" style="justify-content: center;">
-              <span class="alipay-logo-text">Shadowrocket 扫码订阅</span>
-            </div>
-            <div class="qr-wrapper" style="margin: 10px auto;">
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://36494.xueshanlink.com/api/xueshanlink/08c0ca2b585f53af0d0b29e731f7119c" alt="Shadowrocket订阅二维码" class="qr-image" style="width: 150px; height: 150px;">
-            </div>
-          </div>
-        </div>
-
-        <div id="success-service-content" style="display: none; text-align: center; padding: 20px 10px;">
-          <div style="font-size: 48px; margin-bottom: 15px;">✅</div>
-          <h3 style="color: #1e293b; margin-bottom: 12px; font-size: 18px;">付款成功！</h3>
-          <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
-            正在为您处理订单。<br>
-            相关的服务账号信息将会发送至您填写的邮箱。<br>
-            <strong style="color: #ef4444;">请检查您的邮箱（以及垃圾邮箱）。</strong>
-          </p>
-        </div>
-
-      </div>
-
-      <div class="dialog-footer">
-        <button type="button" id="finish-btn" class="dialog-btn primary-btn">完成并关闭</button>
-      </div>
-    </div>
-  </dialog>
 
   <!-- Full-screen Auth Overlay -->
   <div id="login-overlay" class="login-overlay hidden">

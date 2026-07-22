@@ -189,39 +189,97 @@ async function loadDashboardData() {
       
       if (sub.type !== 'service') {
         const purchaseDate = sub.purchaseDate.toDate();
-        // Assuming duration is in months (e.g. 3, 12, or 999 for lifetime)
         const durationDays = sub.durationMonths * 30; // Approximation
         
         const expiryDate = new Date(purchaseDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
         const diffTime = Math.max(0, expiryDate - now);
         diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         isExpired = diffDays <= 0;
+        percent = isExpired ? 0 : Math.min(100, Math.round((diffDays / durationDays) * 100));
       }
       
       html += `
-        <div class="dashboard-item">
-          <div class="dashboard-item-header">
-            <span class="dashboard-plan-name">${sub.planName}</span>
+        <div class="dashboard-subscription-card">
+          <div class="sub-card-header">
+            <h3 class="sub-plan-name">${sub.planName}</h3>
             ${sub.type !== 'service' ? 
-              (isExpired ? '<span class="status-badge expired">已过期</span>' : `<span class="status-badge active">剩余 ${diffDays} 天</span>`)
+              (isExpired ? '<span class="status-badge expired">已过期</span>' : '<span class="status-badge active">生效中</span>')
               : '<span class="status-badge service">长效服务</span>'
             }
           </div>
-          <div class="dashboard-item-content">
-            ${sub.subUrl ? `
-              <div class="sub-link-group">
-                <label>订阅地址：</label>
-                <div class="sub-link-box">${sub.subUrl}</div>
-                <button class="dash-copy-btn" data-clipboard="${sub.subUrl}">复制</button>
+          
+          <div class="sub-card-body">
+            ${sub.type !== 'service' ? `
+              <div class="progress-section">
+                <div class="circular-progress">
+                  <svg width="100" height="100">
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="#f1f5f9" stroke-width="8"></circle>
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="#22c55e" stroke-width="8"
+                            stroke-dasharray="263.89" stroke-dashoffset="${isExpired ? 263.89 : 263.89 - (263.89 * percent / 100)}"
+                            stroke-linecap="round" transform="rotate(-90 50 50)"></circle>
+                  </svg>
+                  <div class="progress-icon">
+                    <svg viewBox="0 0 24 24" width="28" height="28" stroke="#64748b" stroke-width="2" fill="none">
+                      <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                      <line x1="8" y1="21" x2="16" y2="21"></line>
+                      <line x1="12" y1="17" x2="12" y2="21"></line>
+                    </svg>
+                  </div>
+                </div>
+                <div class="progress-text">
+                  <span class="days-value">${isExpired ? 0 : diffDays}</span>
+                  <span class="days-unit">天</span>
+                </div>
+                <div class="progress-label">剩余时长</div>
               </div>
-            ` : ''}
-            ${sub.accountInfo ? `
-              <div class="sub-link-group">
-                <label>账号信息：</label>
-                <div class="sub-link-box">${sub.accountInfo}</div>
-                <button class="dash-copy-btn" data-clipboard="${sub.accountInfo}">复制</button>
+            ` : `
+              <div class="progress-section">
+                <div style="font-size: 48px; margin-bottom: 10px;">♾️</div>
+                <div class="progress-text">
+                  <span class="days-value">永久</span>
+                </div>
               </div>
-            ` : ''}
+            `}
+            
+            <div class="sub-links-section">
+              ${sub.subUrl ? `
+                <div class="link-row">
+                  <div class="link-header">
+                    <span class="link-title">通用订阅地址</span>
+                    <button class="dash-copy-btn" data-clipboard="${sub.subUrl}">点击复制</button>
+                  </div>
+                  <div class="link-box">${sub.subUrl}</div>
+                </div>
+                <div class="link-row">
+                  <div class="link-header">
+                    <span class="link-title">HY2 协议地址</span>
+                    <button class="dash-copy-btn" data-clipboard="${sub.subUrl}&types=hysteria2">点击复制</button>
+                  </div>
+                  <div class="link-box">${sub.subUrl}&types=hysteria2</div>
+                </div>
+                <div class="link-row">
+                  <div class="link-header">
+                    <span class="link-title">Vless 协议地址</span>
+                    <button class="dash-copy-btn" data-clipboard="${sub.subUrl}&types=vless">点击复制</button>
+                  </div>
+                  <div class="link-box">${sub.subUrl}&types=vless</div>
+                </div>
+                <div class="qr-section">
+                  <div class="qr-title">Shadowrocket 扫码订阅</div>
+                  <img class="sub-qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(sub.subUrl)}" alt="QR Code">
+                </div>
+              ` : ''}
+              
+              ${sub.accountInfo ? `
+                <div class="link-row">
+                  <div class="link-header">
+                    <span class="link-title">账号信息</span>
+                    <button class="dash-copy-btn" data-clipboard="${sub.accountInfo}">点击复制</button>
+                  </div>
+                  <div class="link-box">${sub.accountInfo.replace(/\n/g, '<br>')}</div>
+                </div>
+              ` : ''}
+            </div>
           </div>
         </div>
       `;

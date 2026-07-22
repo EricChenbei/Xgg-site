@@ -15,10 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const closePaymentBtn = document.getElementById('close-payment-btn');
   const confirmPaymentBtn = document.getElementById('confirm-payment-btn');
 
-  const successDialog = document.getElementById('success-dialog');
-  const successCloseBtn = document.getElementById('success-close-btn');
-  const finishBtn = document.getElementById('finish-btn');
-
   // Tab Switching Logic
   const tabBuy = document.getElementById('tab-buy');
   const tabQuery = document.getElementById('tab-query');
@@ -262,61 +258,52 @@ document.addEventListener('DOMContentLoaded', () => {
       
       closeDialog();
       
-      // Setup success dialog content based on plan type
-      const vpnContent = document.getElementById('success-vpn-content');
-      const serviceContent = document.getElementById('success-service-content');
-      const subtitle = document.getElementById('success-dialog-subtitle');
-
-      if (currentPlan.type === 'service' || currentPlan.label.includes('仅买小火箭')) {
-        vpnContent.style.display = 'none';
-        serviceContent.style.display = 'block';
-        subtitle.style.display = 'none';
-      } else {
-        vpnContent.style.display = 'block';
-        serviceContent.style.display = 'none';
-        subtitle.style.display = 'block';
+      // Write to Firestore
+      const auth = window.getAuth ? window.getAuth() : null;
+      const db = window.getDb ? window.getDb() : null;
+      
+      if (auth && auth.currentUser && db) {
+        try {
+          const userRef = db.collection('users').doc(auth.currentUser.uid);
+          const doc = await userRef.get();
+          let subs = [];
+          if (doc.exists && doc.data().subscriptions) {
+            subs = doc.data().subscriptions;
+          }
+          
+          let durationMonths = 1;
+          if (currentPlan.label.includes('季度')) durationMonths = 3;
+          else if (currentPlan.label.includes('半年')) durationMonths = 6;
+          else if (currentPlan.label.includes('一年')) durationMonths = 12;
+          else if (currentPlan.label.includes('永久')) durationMonths = 999;
+          
+          const defaultSubUrl = 'https://36494.xueshanlink.com/api/xueshanlink/08c0ca2b585f53af0d0b29e731f7119c';
+          
+          subs.unshift({ // Add to beginning
+            planName: currentPlan.label,
+            price: currentPlan.price,
+            durationMonths: durationMonths,
+            purchaseDate: new Date(),
+            type: currentPlan.type || 'vpn',
+            subUrl: currentPlan.type !== 'service' && !currentPlan.label.includes('仅买小火箭') ? defaultSubUrl : '',
+            accountInfo: currentPlan.label.includes('仅买小火箭') ? '订单处理中，账号信息将发送至您的邮箱' : ''
+          });
+          
+          await userRef.set({ subscriptions: subs }, { merge: true });
+        } catch (e) {
+          console.error("Failed to write subscription to Firestore", e);
+        }
       }
 
-      // Show success and subscription links dialog
-      successDialog.showModal();
+      form.reset();
+      payVerificationInput.value = '';
+      payVerificationInput.classList.remove('custom-invalid');
+
+      if (window.switchToQueryTab) {
+        window.switchToQueryTab();
+      }
     }
   });
-
-  /**
-   * Success Dialog and Copy Logic
-   */
-  const closeSuccess = () => {
-    successDialog.close();
-    form.reset();
-    payVerificationInput.value = '';
-    payVerificationInput.classList.remove('custom-invalid');
-    confirmPaymentBtn.disabled = true;
-  };
-
-  successCloseBtn.addEventListener('click', closeSuccess);
-  finishBtn.addEventListener('click', closeSuccess);
-
-  const copyBtns = document.querySelectorAll('.copy-btn');
-  copyBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const textToCopy = btn.getAttribute('data-clipboard');
-      navigator.clipboard.writeText(textToCopy).then(() => {
-        const originalText = btn.textContent;
-        btn.textContent = '已复制!';
-        btn.style.background = '#10b981';
-        btn.style.color = '#fff';
-        setTimeout(() => {
-          btn.textContent = originalText;
-          btn.style.background = '';
-          btn.style.color = '';
-        }, 2000);
-      }).catch(err => {
-        console.error('Copy failed', err);
-        alert('复制失败，请手动选择复制。');
-      });
-    });
-  });
-
   /**
    * Dialog Light-Dismiss Fallback (from modern web guidelines)
    * Essential for browser compatibility (e.g., iOS Safari) where closedby="any" is not yet baseline.
