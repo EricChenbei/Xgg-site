@@ -183,11 +183,31 @@ async function loadDashboardData() {
     const now = new Date();
     
     data.subscriptions.forEach(sub => {
+      // Enforce display safety rules: do not leak VPN subUrl for non-package purchases (like standalone 小火箭 or 接码)
+      let displaySubUrl = sub.subUrl;
+      let displayAccountInfo = sub.accountInfo;
+      const isPackage = sub.planName && sub.planName.includes('套餐');
+      const isRocket = sub.planName && sub.planName.includes('小火箭');
+      
+      if (!isPackage) {
+        displaySubUrl = ''; // Hide subscription URL and QR codes
+        if (isRocket) {
+          displayAccountInfo = '小火箭ID通过邮箱发货，如果未收到邮件请联系客服';
+        } else {
+          displayAccountInfo = '该商品通过邮箱发货，如果未收到邮件请联系客服';
+        }
+      } else if (isRocket) {
+        displayAccountInfo = '您套餐内置的小火箭ID通过邮箱发货，如果未收到邮件请联系客服';
+      }
+      
+      const isServiceType = sub.type === 'service' || (!isPackage && isRocket) || sub.durationMonths === 999;
+
       // Calculate remaining days
       let diffDays = 0;
       let isExpired = false;
+      let percent = 0;
       
-      if (sub.type !== 'service') {
+      if (!isServiceType) {
         const purchaseDate = sub.purchaseDate.toDate();
         const durationDays = sub.durationMonths * 30; // Approximation
         
@@ -202,14 +222,14 @@ async function loadDashboardData() {
         <div class="dashboard-subscription-card">
           <div class="sub-card-header">
             <h3 class="sub-plan-name">${sub.planName}</h3>
-            ${sub.type !== 'service' ? 
+            ${!isServiceType ? 
               (isExpired ? '<span class="status-badge expired">已过期</span>' : '<span class="status-badge active">生效中</span>')
               : '<span class="status-badge service">长效服务</span>'
             }
           </div>
           
           <div class="sub-card-body">
-            ${sub.type !== 'service' ? `
+            ${!isServiceType ? `
               <div class="progress-section">
                 <div class="circular-progress">
                   <svg width="100" height="100">
@@ -242,41 +262,41 @@ async function loadDashboardData() {
             `}
             
             <div class="sub-links-section">
-              ${sub.subUrl ? `
+              ${displaySubUrl ? `
                 <div class="link-row">
                   <div class="link-header">
                     <span class="link-title">通用订阅地址</span>
-                    <button class="dash-copy-btn" data-clipboard="${sub.subUrl}">点击复制</button>
+                    <button class="dash-copy-btn" data-clipboard="${displaySubUrl}">点击复制</button>
                   </div>
-                  <div class="link-box">${sub.subUrl}</div>
+                  <div class="link-box">${displaySubUrl}</div>
                 </div>
                 <div class="link-row">
                   <div class="link-header">
                     <span class="link-title">HY2 协议地址</span>
-                    <button class="dash-copy-btn" data-clipboard="${sub.subUrl}&types=hysteria2">点击复制</button>
+                    <button class="dash-copy-btn" data-clipboard="${displaySubUrl}&types=hysteria2">点击复制</button>
                   </div>
-                  <div class="link-box">${sub.subUrl}&types=hysteria2</div>
+                  <div class="link-box">${displaySubUrl}&types=hysteria2</div>
                 </div>
                 <div class="link-row">
                   <div class="link-header">
                     <span class="link-title">Vless 协议地址</span>
-                    <button class="dash-copy-btn" data-clipboard="${sub.subUrl}&types=vless">点击复制</button>
+                    <button class="dash-copy-btn" data-clipboard="${displaySubUrl}&types=vless">点击复制</button>
                   </div>
-                  <div class="link-box">${sub.subUrl}&types=vless</div>
+                  <div class="link-box">${displaySubUrl}&types=vless</div>
                 </div>
                 <div class="qr-section">
                   <div class="qr-title">Shadowrocket 扫码订阅</div>
-                  <img class="sub-qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(sub.subUrl)}" alt="QR Code">
+                  <img class="sub-qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(displaySubUrl)}" alt="QR Code">
                 </div>
               ` : ''}
               
-              ${sub.accountInfo ? `
+              ${displayAccountInfo ? `
                 <div class="link-row">
                   <div class="link-header">
-                    <span class="link-title">账号信息</span>
-                    <button class="dash-copy-btn" data-clipboard="${sub.accountInfo}">点击复制</button>
+                    <span class="link-title">账号与发货信息</span>
+                    ${!displayAccountInfo.includes('邮箱发货') ? `<button class="dash-copy-btn" data-clipboard="${displayAccountInfo}">点击复制</button>` : ''}
                   </div>
-                  <div class="link-box">${sub.accountInfo.replace(/\n/g, '<br>')}</div>
+                  <div class="link-box" style="${displayAccountInfo.includes('邮箱发货') ? 'color: #3b82f6; font-weight: 600;' : ''}">${displayAccountInfo.replace(/\n/g, '<br>')}</div>
                 </div>
               ` : ''}
             </div>
