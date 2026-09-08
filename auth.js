@@ -208,7 +208,12 @@ async function loadDashboardData() {
       let percent = 0;
       
       if (!isServiceType) {
-        const purchaseDate = sub.purchaseDate.toDate();
+        let purchaseDate;
+        if (sub.purchaseDate) {
+          purchaseDate = typeof sub.purchaseDate.toDate === 'function' ? sub.purchaseDate.toDate() : new Date(sub.purchaseDate);
+        } else {
+          purchaseDate = now;
+        }
         const durationDays = sub.durationMonths * 30; // Approximation
         
         const expiryDate = new Date(purchaseDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
