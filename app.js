@@ -1,5 +1,5 @@
 /**
- * Xgg Accelerator landing Page Interactions & Logic
+ * Xgg Accelerator Landing Page Interactions & Logic
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -18,12 +18,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // Tab Switching Logic
   const tabBuy = document.getElementById('tab-buy');
   const tabQuery = document.getElementById('tab-query');
+  const formTabBuy = document.getElementById('form-tab-buy');
+  const formTabQuery = document.getElementById('form-tab-query');
   const planView = document.getElementById('plan-view');
   const dashboardView = document.getElementById('dashboard-view');
   const durationCard = document.querySelector('.duration-card');
+  const serviceCard = document.querySelector('.service-card');
   const formCard = document.querySelector('.form-card');
 
-  // Expose function for header auth button to switch tabs
+  // Expose function for header auth button and bottom tab to switch tabs
   window.switchToQueryTab = () => {
     if (tabQuery) tabQuery.click();
   };
@@ -35,9 +38,16 @@ document.addEventListener('DOMContentLoaded', () => {
       tabQuery.classList.remove('active');
       tabQuery.setAttribute('aria-selected', 'false');
 
-      if (planView) planView.classList.remove('hidden');
-      if (dashboardView) dashboardView.classList.add('hidden');
+      if (planView) {
+        planView.classList.remove('hidden');
+        planView.style.display = '';
+      }
+      if (dashboardView) {
+        dashboardView.classList.add('hidden');
+        dashboardView.style.display = 'none';
+      }
       if (durationCard) durationCard.style.display = 'block';
+      if (serviceCard) serviceCard.style.display = 'block';
       if (formCard) formCard.style.display = 'block';
     });
 
@@ -54,9 +64,16 @@ document.addEventListener('DOMContentLoaded', () => {
       tabBuy.classList.remove('active');
       tabBuy.setAttribute('aria-selected', 'false');
 
-      if (planView) planView.classList.add('hidden');
-      if (dashboardView) dashboardView.classList.remove('hidden');
+      if (planView) {
+        planView.classList.add('hidden');
+        planView.style.display = 'none';
+      }
+      if (dashboardView) {
+        dashboardView.classList.remove('hidden');
+        dashboardView.style.display = 'block';
+      }
       if (durationCard) durationCard.style.display = 'none';
+      if (serviceCard) serviceCard.style.display = 'none';
       if (formCard) formCard.style.display = 'none';
 
       if (window.loadDashboardData) {
@@ -65,12 +82,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Selected Plan State
+  if (formTabQuery) {
+    formTabQuery.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (window.switchToQueryTab) window.switchToQueryTab();
+    });
+  }
+
+  // Selected Plan State (Default: 1 Month ¥25.20)
   let currentPlan = {
     price: '25.20',
-    label: '季度套餐 (3个月)',
-    duration: '3个月',
-    qr: 'qr-25.jpg'
+    label: '月度套餐 (1个月)',
+    duration: '1个月',
+    qr: 'qr-25.jpg',
+    type: 'duration'
   };
 
   // Setup Plan Selection
@@ -107,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       if (currentPlan.type === 'service') {
         summaryDuration.textContent = '通过您的订阅邮箱自动发货';
-      } else if (currentPlan.label.includes('仅买小火箭')) {
+      } else if (currentPlan.label.includes('仅买小火箭') || (currentPlan.label.includes('小火箭') && !currentPlan.label.includes('套餐'))) {
         summaryDuration.textContent = '含独立的小火箭美区账号';
       } else if (currentPlan.label.includes('小火箭')) {
         summaryDuration.textContent = `含${currentPlan.duration.split('+')[0]}使用时长 + 小火箭账号`;
@@ -131,7 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const auth = window.getAuth ? window.getAuth() : null;
       if (!auth || !auth.currentUser) {
-        // User is not logged in, show auth dialog
         const authDialog = document.getElementById('login-overlay');
         if (authDialog) authDialog.classList.remove('hidden');
         return;
@@ -139,22 +163,18 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const email = auth.currentUser.email;
 
-      // Toggle button state to loading temporarily for visual feedback
       submitBtn.disabled = true;
       spinner.classList.remove('hidden');
       btnText.textContent = '正在进入付款...';
 
       setTimeout(() => {
-        // Restore button status
         submitBtn.disabled = false;
         spinner.classList.add('hidden');
         btnText.textContent = '立即购买';
 
-        // Store the verified email
         tempEmail = email;
         registeredEmailSpan.textContent = email;
         
-        // Open the elegant glassmorphic payment dialog modal
         const qrImage = document.querySelector('.qr-image');
         const amountVal = document.querySelector('.amount-val');
         if (qrImage) {
@@ -165,9 +185,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         paymentDialog.showModal();
-      }, 600); // Quick smooth delay for premium interactive feel
+      }, 400);
     });
-  }  /**
+  }
+
+  /**
    * Modal Close Handlers
    */
   const closeDialog = () => {
@@ -189,15 +211,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /**
-   * Payment Confirmation Click: Only trigger Formspree notification when customer clicks "I have paid"
-   * MANDATORY: Requires filling in their Alipay Name/Transaction ID to prevent fake paid claims!
+   * Payment Confirmation Click
    */
   confirmPaymentBtn.addEventListener('click', async () => {
     if (!tempEmail) return;
 
     const payVerification = payVerificationInput.value.trim();
 
-    // Validate manual payment confirmation info
     if (!payVerification) {
       payVerificationInput.classList.add('custom-invalid');
       payVerificationError.style.display = 'block';
@@ -210,105 +230,85 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const originalText = confirmPaymentBtn.textContent;
     confirmPaymentBtn.disabled = true;
-    confirmPaymentBtn.textContent = '正在发送已付款通知...';
+    confirmPaymentBtn.textContent = '正在登记订单...';
 
-    // Formspree API Endpoint
-    const FORMSPREE_ENDPOINT = 'https://formspree.io/f/mnjrwaap'; 
-
+    // 1. Immediately build and save subscription locally + cloud Auth profile so it NEVER fails
     try {
-      let response;
-      
-      if (FORMSPREE_ENDPOINT && !FORMSPREE_ENDPOINT.includes('your_form_id_here')) {
-        response = await fetch(FORMSPREE_ENDPOINT, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({
-            title: 'Xgg加速器 订单付款登记通知',
-            customer_email: tempEmail,
-            user_uid: window.getAuth && window.getAuth().currentUser ? window.getAuth().currentUser.uid : 'Guest',
-            alipay_verification: payVerification,
-            payment_status: `已手动确认支付 ￥${currentPlan.price}`,
-            plan: currentPlan.label,
-            duration: currentPlan.duration,
-            price: `￥${currentPlan.price}`,
-            recipient: 'larrymimo8@gmail.com'
-          })
-        });
-      } else {
-        // Mock testing response
-        console.log(`[Email Notification Mock] Paid email notification sent. recipient: larrymimo8@gmail.com, customer email: ${tempEmail}, verification: ${payVerification}`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        response = { ok: true };
-      }
+      let durationMonths = 1;
+      if (currentPlan.label.includes('月度') || currentPlan.duration.includes('1个月')) durationMonths = 1;
+      else if (currentPlan.label.includes('季度')) durationMonths = 3;
+      else if (currentPlan.label.includes('半年')) durationMonths = 6;
+      else if (currentPlan.label.includes('一年') || currentPlan.label.includes('年度')) durationMonths = 12;
+      else if (currentPlan.label.includes('永久') || (currentPlan.label.includes('小火箭') && !currentPlan.label.includes('套餐'))) durationMonths = 999;
 
-      // We don't throw error on !response.ok because we want the user to see the success UI regardless.
-      if (!response.ok) {
-        console.warn('Formspree responded with an error, but proceeding to show success UI to user.');
-      }
+      const defaultSubUrl = 'https://36494.xueshanlink.com/api/xueshanlink/08c0ca2b585f53af0d0b29e731f7119c';
+      const isPackage = currentPlan.label.includes('套餐');
+      const isRocket = currentPlan.label.includes('小火箭');
 
+      const newSub = {
+        planName: currentPlan.label,
+        price: currentPlan.price,
+        durationMonths: durationMonths,
+        purchaseDate: new Date().toISOString(),
+        type: (!isPackage && isRocket) ? 'service' : (currentPlan.type || 'vpn'),
+        subUrl: isPackage ? defaultSubUrl : '',
+        accountInfo: !isPackage
+          ? (isRocket ? '小火箭ID通过邮箱发货，如果未收到邮件请联系客服' : '该商品通过邮箱发货，如果未收到邮件请联系客服')
+          : (isRocket ? '您套餐内置的小火箭ID通过邮箱发货，如果未收到邮件请联系客服' : '')
+      };
+
+      const existingSubs = window.getUserSubscriptions ? await window.getUserSubscriptions() : [];
+      if (window.saveUserSubscriptions) {
+        await window.saveUserSubscriptions([newSub, ...existingSubs]);
+      }
+    } catch (e) {
+      console.error('Error saving subscription:', e);
+    }
+
+    // 2. Send Formspree Notification (with 3s timeout so UI never hangs)
+    const FORMSPREE_ENDPOINT = 'https://formspree.io/f/mnjrwaap';
+    try {
+      const fetchPromise = fetch(FORMSPREE_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          title: 'Xgg加速器 订单付款登记通知',
+          customer_email: tempEmail,
+          user_uid: window.getAuth && window.getAuth().currentUser ? window.getAuth().currentUser.uid : 'Guest',
+          alipay_verification: payVerification,
+          payment_status: `已手动确认支付 ￥${currentPlan.price}`,
+          plan: currentPlan.label,
+          duration: currentPlan.duration,
+          price: `￥${currentPlan.price}`,
+          recipient: 'larrymimo8@gmail.com'
+        })
+      });
+      const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
+      await Promise.race([fetchPromise, timeoutPromise]);
     } catch (err) {
-      console.warn('Network request failed, standard fallback executed.', err);
+      console.warn('Formspree notification warning:', err);
     } finally {
-      // Restore button status
       confirmPaymentBtn.disabled = false;
       confirmPaymentBtn.textContent = originalText;
-      
+
       closeDialog();
-      
-      // Write to Firestore
-      const auth = window.getAuth ? window.getAuth() : null;
-      const db = window.getDb ? window.getDb() : null;
-      
-      if (auth && auth.currentUser && db) {
-        try {
-          const userRef = db.collection('users').doc(auth.currentUser.uid);
-          const doc = await userRef.get();
-          let subs = [];
-          if (doc.exists && doc.data().subscriptions) {
-            subs = doc.data().subscriptions;
-          }
-          
-          let durationMonths = 1;
-          if (currentPlan.label.includes('季度')) durationMonths = 3;
-          else if (currentPlan.label.includes('半年')) durationMonths = 6;
-          else if (currentPlan.label.includes('一年')) durationMonths = 12;
-          else if (currentPlan.label.includes('永久') || (currentPlan.label.includes('小火箭') && !currentPlan.label.includes('套餐'))) durationMonths = 999;
-          
-          const defaultSubUrl = 'https://36494.xueshanlink.com/api/xueshanlink/08c0ca2b585f53af0d0b29e731f7119c';
-          const isPackage = currentPlan.label.includes('套餐');
-          const isRocket = currentPlan.label.includes('小火箭');
-          
-          subs.unshift({ // Add to beginning
-            planName: currentPlan.label,
-            price: currentPlan.price,
-            durationMonths: durationMonths,
-            purchaseDate: new Date(),
-            type: (!isPackage && isRocket) ? 'service' : (currentPlan.type || 'vpn'),
-            subUrl: isPackage ? defaultSubUrl : '',
-            accountInfo: !isPackage ? (isRocket ? '小火箭ID通过邮箱发货，如果未收到邮件请联系客服' : '该商品通过邮箱发货，如果未收到邮件请联系客服') : (isRocket ? '您套餐内置的小火箭ID通过邮箱发货，如果未收到邮件请联系客服' : '')
-          });
-          
-          await userRef.set({ subscriptions: subs }, { merge: true });
-        } catch (e) {
-          console.error("Failed to write subscription to Firestore", e);
-        }
-      }
 
       form.reset();
       payVerificationInput.value = '';
       payVerificationInput.classList.remove('custom-invalid');
 
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       if (window.switchToQueryTab) {
         window.switchToQueryTab();
       }
     }
   });
+
   /**
-   * Dialog Light-Dismiss Fallback (from modern web guidelines)
-   * Essential for browser compatibility (e.g., iOS Safari) where closedby="any" is not yet baseline.
+   * Dialog Light-Dismiss Fallback
    */
   if (!('closedBy' in HTMLDialogElement.prototype)) {
     paymentDialog.addEventListener('click', (event) => {
@@ -353,7 +353,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2500);
   }
 
-  // Bind click event to disabled service options to show the toast
   const disabledOptions = document.querySelectorAll('.service-option.disabled');
   disabledOptions.forEach(opt => {
     opt.addEventListener('click', () => {

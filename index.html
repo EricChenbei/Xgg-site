@@ -139,15 +139,15 @@
               <span class="option-price">￥15.00/个</span>
             </div>
           </div>
-          <div class="duration-option selectable-option active" role="radio" tabindex="0" aria-checked="true" data-price="25.20" data-label="季度套餐" data-duration="3个月" data-qr="qr-25.jpg">
+          <div class="duration-option selectable-option active" role="radio" tabindex="0" aria-checked="true" data-price="25.20" data-label="月度套餐 (1个月)" data-duration="1个月" data-qr="qr-25.jpg">
             <div class="option-details">
-              <span class="option-label">季度套餐 (3个月)</span>
-              <span class="option-price">￥25.20/季</span>
+              <span class="option-label">月度套餐 (1个月)</span>
+              <span class="option-price">￥25.20/月</span>
             </div>
           </div>
-          <div class="duration-option selectable-option" role="radio" tabindex="0" aria-checked="false" data-price="39.90" data-label="季度套餐+小火箭账号" data-duration="3个月+号" data-qr="qr-39.jpg">
+          <div class="duration-option selectable-option" role="radio" tabindex="0" aria-checked="false" data-price="39.90" data-label="月度套餐+小火箭账号" data-duration="1个月+号" data-qr="qr-39.jpg">
             <div class="option-details">
-              <span class="option-label">季度套餐+小火箭</span>
+              <span class="option-label">月度套餐+小火箭</span>
               <span class="option-price">￥39.90/总价</span>
             </div>
             <div class="option-badge">当前推荐</div>
@@ -271,8 +271,8 @@
       <!-- Order Details Form Section -->
       <section class="card form-card" aria-labelledby="form-title">
         <div class="form-tabs">
-          <button class="form-tab active" aria-selected="true">购买套餐</button>
-          <button class="form-tab disabled" aria-selected="false" disabled>订阅查询</button>
+          <button type="button" class="form-tab active" aria-selected="true" id="form-tab-buy">购买套餐</button>
+          <button type="button" class="form-tab" aria-selected="false" id="form-tab-query">订阅查询</button>
         </div>
         
         <form id="purchase-form" novalidate>
@@ -300,12 +300,12 @@
             <h3 class="summary-title">订单摘要</h3>
             <div class="summary-details">
               <div class="summary-row">
-                <span class="summary-label" id="summary-plan-label">季度套餐 (3个月)</span>
-                <span class="summary-value" id="summary-plan-price">￥25.20/季</span>
+                <span class="summary-label" id="summary-plan-label">月度套餐 (1个月)</span>
+                <span class="summary-value" id="summary-plan-price">￥25.20/月</span>
               </div>
               <div class="summary-row">
                 <span class="summary-label">说明</span>
-                <span class="summary-value" id="summary-duration" style="font-size:13px; color:#64748b; font-weight:normal;">含3个月使用时长</span>
+                <span class="summary-value" id="summary-duration" style="font-size:13px; color:#64748b; font-weight:normal;">含1个月使用时长</span>
               </div>
               <hr class="summary-divider">
               <div class="summary-row total-row">
