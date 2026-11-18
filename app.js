@@ -236,8 +236,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       let durationMonths = 1;
       if (currentPlan.label.includes('月度') || currentPlan.duration.includes('1个月')) durationMonths = 1;
-      else if (currentPlan.label.includes('季度')) durationMonths = 3;
-      else if (currentPlan.label.includes('半年')) durationMonths = 6;
       else if (currentPlan.label.includes('一年') || currentPlan.label.includes('年度')) durationMonths = 12;
       else if (currentPlan.label.includes('永久') || (currentPlan.label.includes('小火箭') && !currentPlan.label.includes('套餐'))) durationMonths = 999;
 

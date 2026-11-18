@@ -16,6 +16,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 const DEFAULT_SUB_URL = 'https://36494.xueshanlink.com/api/xueshanlink/08c0ca2b585f53af0d0b29e731f7119c';
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 // DOM Elements
 const authBtn = document.getElementById('header-auth-btn');
@@ -35,16 +36,15 @@ const dashboardContent = document.getElementById('dashboard-content');
 
 let isLoginMode = true;
 
-// Helper: Normalize a subscription object
+// Helper: Normalize a subscription object (strictly 1-month for 25.20 / 39.90 plans, no quarterly plans)
 function normalizeSub(raw) {
   if (!raw) return null;
-  let planName = raw.planName || raw.p || '月度套餐 (1个月)';
+  let planName = String(raw.planName || raw.p || '月度套餐 (1个月)');
   let price = String(raw.price || raw.pr || '25.20');
 
-  // Convert legacy 25.20 / 39.90 quarterly labels to 1-month as requested
-  if (planName.includes('季度套餐+小火箭')) {
-    planName = '月度套餐+小火箭账号';
-  } else if (planName === '季度套餐' || planName === '季度套餐 (3个月)') {
+  // Force replace any legacy quarterly text with monthly (1 month)
+  planName = planName.replace(/季度/g, '月度').replace(/3个月/g, '1个月');
+  if (planName === '月度套餐') {
     planName = '月度套餐 (1个月)';
   }
 
@@ -52,10 +52,8 @@ function normalizeSub(raw) {
   const isRocket = planName.includes('小火箭');
 
   let durationMonths = Number(raw.durationMonths || raw.d || 1);
-  if (planName.includes('月度') || price === '25.20' || price === '39.90') {
+  if (planName.includes('月度') || price === '25.20' || price === '25.00' || price === '25' || price === '39.90') {
     durationMonths = 1;
-  } else if (planName.includes('半年')) {
-    durationMonths = 6;
   } else if (planName.includes('年度') || planName.includes('一年') || price === '99.00') {
     durationMonths = 12;
   } else if (!isPackage) {
@@ -90,11 +88,62 @@ function normalizeSub(raw) {
     durationMonths,
     purchaseDate: new Date(purchaseMs).toISOString(),
     purchaseMs,
+    lastCycleRefreshMs: raw.lastCycleRefreshMs || purchaseMs,
     type: !isPackage ? 'service' : (raw.type || raw.tp || 'vpn'),
     subUrl: isPackage ? DEFAULT_SUB_URL : '',
     accountInfo
   };
 }
+
+// Helper: Automatic 30-day data update & cycle refresh behavior
+async function run30DayAutoDataUpdate(subsList) {
+  const user = auth.currentUser;
+  if (!user) return subsList;
+
+  const nowMs = Date.now();
+  const metaKey = `xgg_last_30d_sync_${user.uid}`;
+  const lastSyncMs = Number(localStorage.getItem(metaKey) || 0);
+  let needsSync = false;
+
+  // Check if 30 days have passed since last global data update
+  if (!lastSyncMs || (nowMs - lastSyncMs) >= THIRTY_DAYS_MS) {
+    needsSync = true;
+  }
+
+  // Also check each subscription for 30-day cycle data update
+  const updatedSubs = (subsList || []).map(sub => {
+    const norm = normalizeSub(sub);
+    if (!norm) return null;
+    const lastRefresh = norm.lastCycleRefreshMs || norm.purchaseMs;
+    if ((nowMs - lastRefresh) >= THIRTY_DAYS_MS) {
+      norm.lastCycleRefreshMs = nowMs;
+      needsSync = true;
+    }
+    return norm;
+  }).filter(Boolean);
+
+  if (needsSync) {
+    try {
+      // Force refresh Firebase Auth token so session & cloud profile stay active every 30 days
+      await user.getIdToken(true).catch(() => {});
+      localStorage.setItem(metaKey, String(nowMs));
+      if (updatedSubs.length > 0) {
+        await saveUserSubscriptions(updatedSubs);
+      }
+    } catch (e) {
+      console.warn('30-day auto data update warning:', e);
+    }
+  }
+
+  return updatedSubs;
+}
+
+// Schedule periodic check while page is open (checks every hour for 30-day threshold)
+setInterval(() => {
+  if (auth.currentUser) {
+    getUserSubscriptions().then(subs => run30DayAutoDataUpdate(subs)).catch(() => {});
+  }
+}, 60 * 60 * 1000);
 
 // Helper: Read subscriptions from LocalStorage + Firebase Auth Profile + Firestore (with timeout)
 async function getUserSubscriptions() {
@@ -168,7 +217,6 @@ async function getUserSubscriptions() {
   const uniqueMap = new Map();
   collected.sort((a, b) => b.purchaseMs - a.purchaseMs);
   for (const item of collected) {
-    // Deduplicate items of the same plan bought within the same 2-minute window
     const bucket = Math.floor(item.purchaseMs / 120000);
     const dedupKey = `${item.planName}_${bucket}`;
     if (!uniqueMap.has(dedupKey)) {
@@ -199,6 +247,7 @@ async function saveUserSubscriptions(subsList) {
   if (user) {
     try {
       localStorage.setItem(`xgg_subs_${user.uid}`, JSON.stringify(normalized));
+      localStorage.setItem(`xgg_last_30d_sync_${user.uid}`, String(Date.now()));
       if (user.email) {
         localStorage.setItem(`xgg_subs_${user.email}`, JSON.stringify(normalized));
       }
@@ -223,7 +272,11 @@ async function saveUserSubscriptions(subsList) {
 
     // Best-effort write to Firestore with 2s timeout
     try {
-      const writePromise = db.collection('users').doc(user.uid).set({ subscriptions: normalized }, { merge: true });
+      const writePromise = db.collection('users').doc(user.uid).set({
+        subscriptions: normalized,
+        lastAutoRefreshAt: new Date().toISOString(),
+        refreshIntervalDays: 30
+      }, { merge: true });
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore write timeout')), 2000));
       await Promise.race([writePromise, timeoutPromise]);
     } catch (e) {
@@ -383,13 +436,19 @@ if (logoutBtn) {
 }
 
 // Auth State Observer
-auth.onAuthStateChanged((user) => {
+auth.onAuthStateChanged(async (user) => {
   if (user) {
     if (authDialog) authDialog.classList.add('hidden');
     if (authBtn) {
       authBtn.innerHTML = `<span>👤 我的账号</span>`;
       authBtn.classList.add('logged-in');
     }
+    // Run automatic 30-day data check & refresh on login
+    try {
+      const subs = await getUserSubscriptions();
+      await run30DayAutoDataUpdate(subs);
+    } catch (e) {}
+
     const tabQuery = document.getElementById('tab-query');
     if (tabQuery && tabQuery.classList.contains('active')) {
       loadDashboardData();
@@ -411,13 +470,13 @@ function getRecoveryFormHtml(isCompact = false) {
         💡 已付款但未显示订阅？在此快速找回/激活
       </div>
       <div style="font-size: 12px; color: #64748b; margin-bottom: 12px;">
-        选择您刚购买的套餐并填写付款支付宝姓名或单号后4位，即可立即显示订阅地址与剩余时间：
+        选择您刚购买的套餐并填写付款支付宝姓名或单号后4位，即可立即显示订阅地址与30天倒计时：
       </div>
       <div style="display: flex; flex-direction: column; gap: 10px;">
         <select id="recover-plan-select" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; background: #fff; color: #1e293b;">
           <option value="月度套餐 (1个月)|25.20|1|vpn">月度套餐 (1个月) - ￥25.20/月</option>
-          <option value="月度套餐+小火箭账号|39.90|1|vpn">月度套餐+小火箭 - ￥39.90</option>
-          <option value="年度套餐|99.00|12|vpn">年度套餐 (1年) - ￥99.00/年</option>
+          <option value="月度套餐+小火箭账号|39.90|1|vpn">月度套餐+小火箭 (1个月+号) - ￥39.90</option>
+          <option value="年度套餐 (1年)|99.00|12|vpn">年度套餐 (1年) - ￥99.00/年</option>
           <option value="小火箭账号|15.00|999|service">仅买小火箭账号 - ￥15.00</option>
           <option value="Line 接码|38.00|999|service">Line / Codex 接码服务 - ￥38.00</option>
         </select>
@@ -473,7 +532,8 @@ async function loadDashboardData() {
   dashboardContent.innerHTML = '<div style="text-align:center; padding: 20px; color: #64748b;">正在加载订阅信息...</div>';
   
   try {
-    const subscriptions = await getUserSubscriptions();
+    const rawSubs = await getUserSubscriptions();
+    const subscriptions = await run30DayAutoDataUpdate(rawSubs);
     if (!subscriptions || subscriptions.length === 0) {
       dashboardContent.innerHTML = `
         <div style="text-align:center; padding: 16px 8px; color: #64748b;">
@@ -558,7 +618,7 @@ async function loadDashboardData() {
                   <span class="days-value">${isExpired ? 0 : diffDays}</span>
                   <span class="days-unit">天</span>
                 </div>
-                <div class="progress-label">剩余时长</div>
+                <div class="progress-label">剩余时长 (每30天周期自动同步更新)</div>
               </div>
             ` : `
               <div class="progress-section">
@@ -640,3 +700,4 @@ window.getDb = () => db;
 window.loadDashboardData = loadDashboardData;
 window.getUserSubscriptions = getUserSubscriptions;
 window.saveUserSubscriptions = saveUserSubscriptions;
+window.run30DayAutoDataUpdate = run30DayAutoDataUpdate;
