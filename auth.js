@@ -15,8 +15,56 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-const DEFAULT_SUB_URL = 'https://36494.xueshanlink.com/api/xueshanlink/08c0ca2b585f53af0d0b29e731f7119c';
+const EDGE_HOST = 'xgg-edge.pages.dev';
+const DEFAULT_SUB_URL = `https://${EDGE_HOST}/sub`;
+const SIGN_SALT = 'Xgg_Secret_Salt_2026_v1';
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+function encodeB64UrlStr(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    bin += String.fromCharCode(bytes[i]);
+  }
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function computeTokenSig(payloadB64) {
+  const str = payloadB64 + '.' + SIGN_SALT;
+  let h1 = 0xdeadbeef ^ str.length;
+  let h2 = 0x41c6ce57 ^ str.length;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return ((h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0'));
+}
+
+function buildCustomerSubUrl({ id, name, purchaseMs, durationMonths }) {
+  const days = (durationMonths || 1) * 30;
+  const gb = durationMonths >= 12 ? 2000 : 200;
+  const exp = (purchaseMs || Date.now()) + days * 86400000;
+  const payloadObj = {
+    id: id || ('u_' + (purchaseMs || Date.now()).toString(36)),
+    name: name || '官网客户',
+    exp,
+    gb
+  };
+  const payloadB64 = encodeB64UrlStr(JSON.stringify(payloadObj));
+  const sig = computeTokenSig(payloadB64);
+  const token = `${payloadB64}.${sig}`;
+  return {
+    token,
+    gb,
+    days,
+    exp,
+    subUrl: `https://${EDGE_HOST}/sub/${token}`,
+    clashUrl: `https://${EDGE_HOST}/sub/${token}?clash=1`
+  };
+}
 
 // DOM Elements
 const authBtn = document.getElementById('header-auth-btn');
@@ -82,15 +130,25 @@ function normalizeSub(raw) {
     accountInfo = '您套餐内置的小火箭ID通过邮箱发货，如果未收到邮件请联系客服';
   }
 
+  const userEmail = (auth && auth.currentUser && auth.currentUser.email) ? auth.currentUser.email : '官网客户';
+  const userUid = (auth && auth.currentUser && auth.currentUser.uid) ? auth.currentUser.uid.slice(0, 8) : 'guest';
+  const subId = raw.subId || `u_${userUid}_${Math.floor(purchaseMs / 1000).toString(36)}`;
+  const tokenData = isPackage
+    ? buildCustomerSubUrl({ id: subId, name: userEmail, purchaseMs, durationMonths })
+    : { subUrl: '', clashUrl: '', gb: 0, token: '' };
+
   return {
+    subId,
     planName,
     price,
     durationMonths,
+    quotaGb: tokenData.gb,
     purchaseDate: new Date(purchaseMs).toISOString(),
     purchaseMs,
     lastCycleRefreshMs: raw.lastCycleRefreshMs || purchaseMs,
     type: !isPackage ? 'service' : (raw.type || raw.tp || 'vpn'),
-    subUrl: isPackage ? DEFAULT_SUB_URL : '',
+    subUrl: isPackage ? tokenData.subUrl : '',
+    clashUrl: isPackage ? tokenData.clashUrl : '',
     accountInfo
   };
 }
@@ -269,6 +327,23 @@ async function saveUserSubscriptions(subsList) {
     } catch (e) {
       console.warn('Auth profile backup warning:', e);
     }
+
+    // Best-effort register package subscription with Edge KV API so it shows in /admin
+    try {
+      const topSub = normalized[0];
+      if (topSub && topSub.planName && topSub.planName.includes('套餐')) {
+        fetch(`https://${EDGE_HOST}/api/issue`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: topSub.subId,
+            name: user.email || user.uid,
+            days: (topSub.durationMonths || 1) * 30,
+            gb: topSub.quotaGb || 200
+          })
+        }).catch(() => {});
+      }
+    } catch (e) {}
 
     // Best-effort write to Firestore with 2s timeout
     try {
@@ -618,7 +693,7 @@ async function loadDashboardData() {
                   <span class="days-value">${isExpired ? 0 : diffDays}</span>
                   <span class="days-unit">天</span>
                 </div>
-                <div class="progress-label">剩余时长 (每30天周期自动同步更新)</div>
+                <div class="progress-label">剩余时长 · 分配流量: <strong>${sub.quotaGb || (sub.durationMonths >= 12 ? 2000 : 200)} GB</strong></div>
               </div>
             ` : `
               <div class="progress-section">
@@ -633,24 +708,24 @@ async function loadDashboardData() {
               ${displaySubUrl ? `
                 <div class="link-row">
                   <div class="link-header">
-                    <span class="link-title">通用订阅地址</span>
+                    <span class="link-title">📱 手机小火箭 / 通用专属订阅地址</span>
                     <button type="button" class="dash-copy-btn" data-clipboard="${displaySubUrl}">点击复制</button>
                   </div>
                   <div class="link-box">${displaySubUrl}</div>
                 </div>
                 <div class="link-row">
                   <div class="link-header">
-                    <span class="link-title">HY2 协议地址</span>
-                    <button type="button" class="dash-copy-btn" data-clipboard="${displaySubUrl}&types=hysteria2">点击复制</button>
+                    <span class="link-title">💻 电脑 Clash 专属订阅地址</span>
+                    <button type="button" class="dash-copy-btn" data-clipboard="${sub.clashUrl || (displaySubUrl + '?clash=1')}">点击复制</button>
                   </div>
-                  <div class="link-box">${displaySubUrl}&types=hysteria2</div>
+                  <div class="link-box">${sub.clashUrl || (displaySubUrl + '?clash=1')}</div>
                 </div>
                 <div class="link-row">
                   <div class="link-header">
-                    <span class="link-title">Vless 协议地址</span>
-                    <button type="button" class="dash-copy-btn" data-clipboard="${displaySubUrl}&types=vless">点击复制</button>
+                    <span class="link-title">⚡ Vless 协议专属订阅地址</span>
+                    <button type="button" class="dash-copy-btn" data-clipboard="${displaySubUrl}">点击复制</button>
                   </div>
-                  <div class="link-box">${displaySubUrl}&types=vless</div>
+                  <div class="link-box">${displaySubUrl}</div>
                 </div>
                 <div class="qr-section">
                   <div class="qr-title">Shadowrocket 扫码订阅</div>
