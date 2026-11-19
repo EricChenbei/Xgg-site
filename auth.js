@@ -15,7 +15,7 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-const EDGE_HOST = 'xgg-edge.pages.dev';
+const EDGE_HOST = 'xgg-vip.pages.dev';
 const DEFAULT_SUB_URL = `https://${EDGE_HOST}/sub`;
 const SIGN_SALT = 'Xgg_Secret_Salt_2026_v1';
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
