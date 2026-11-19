@@ -256,8 +256,16 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       const existingSubs = window.getUserSubscriptions ? await window.getUserSubscriptions() : [];
+      let nextSubs = existingSubs;
+      if (isPackage) {
+        // Single-account single-link: replace existing package entry so renewals update the SAME permanent link in place
+        const nonPackageSubs = existingSubs.filter(s => !s.planName || !s.planName.includes('套餐'));
+        nextSubs = [newSub, ...nonPackageSubs];
+      } else {
+        nextSubs = [newSub, ...existingSubs];
+      }
       if (window.saveUserSubscriptions) {
-        await window.saveUserSubscriptions([newSub, ...existingSubs]);
+        await window.saveUserSubscriptions(nextSubs);
       }
     } catch (e) {
       console.error('Error saving subscription:', e);

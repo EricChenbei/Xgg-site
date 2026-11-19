@@ -43,15 +43,20 @@ function computeTokenSig(payloadB64) {
   return ((h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0'));
 }
 
+function getStableAccountId(emailOrId) {
+  const clean = String(emailOrId || '').trim().toLowerCase();
+  if (!clean) return 'u_' + Date.now().toString(36);
+  const sig = computeTokenSig(encodeB64UrlStr(clean));
+  return 'acct_' + sig.slice(0, 12);
+}
+
 function buildCustomerSubUrl({ id, name, purchaseMs, durationMonths }) {
   const days = (durationMonths || 1) * 30;
   const gb = durationMonths >= 12 ? 2000 : 200;
   const exp = (purchaseMs || Date.now()) + days * 86400000;
   const payloadObj = {
-    id: id || ('u_' + (purchaseMs || Date.now()).toString(36)),
-    name: name || '官网客户',
-    exp,
-    gb
+    id: id || getStableAccountId(name),
+    name: name || '官网客户'
   };
   const payloadB64 = encodeB64UrlStr(JSON.stringify(payloadObj));
   const sig = computeTokenSig(payloadB64);
@@ -176,24 +181,27 @@ function normalizeSub(raw) {
 
   const activeUser = getActiveUser();
   const userEmail = (activeUser && activeUser.email) ? activeUser.email : '官网客户';
-  const userUid = (activeUser && activeUser.uid) ? activeUser.uid.slice(0, 8) : 'guest';
-  const subId = raw.subId || `u_${userUid}_${Math.floor(purchaseMs / 1000).toString(36)}`;
+  const subId = isPackage ? getStableAccountId(userEmail) : (raw.subId || `srv_${Math.floor(purchaseMs / 1000).toString(36)}`);
   const tokenData = isPackage
     ? buildCustomerSubUrl({ id: subId, name: userEmail, purchaseMs, durationMonths })
-    : { subUrl: '', clashUrl: '', gb: 0, token: '' };
+    : { subUrl: '', clashUrl: '', gb: 0, token: '', exp: 0 };
+
+  const expMs = Number(raw.expMs || tokenData.exp || (purchaseMs + (durationMonths || 1) * 30 * 86400000));
 
   return {
     subId,
     planName,
     price,
     durationMonths,
-    quotaGb: tokenData.gb,
+    quotaGb: Number(raw.quotaGb || tokenData.gb),
+    usedBytes: Number(raw.usedBytes || 0),
+    expMs,
     purchaseDate: new Date(purchaseMs).toISOString(),
     purchaseMs,
     lastCycleRefreshMs: raw.lastCycleRefreshMs || purchaseMs,
     type: !isPackage ? 'service' : (raw.type || raw.tp || 'vpn'),
-    subUrl: isPackage ? tokenData.subUrl : '',
-    clashUrl: isPackage ? tokenData.clashUrl : '',
+    subUrl: isPackage ? (raw.subUrl || tokenData.subUrl) : '',
+    clashUrl: isPackage ? (raw.clashUrl || tokenData.clashUrl) : '',
     accountInfo
   };
 }
@@ -373,20 +381,36 @@ async function saveUserSubscriptions(subsList) {
       console.warn('Auth profile backup warning:', e);
     }
 
-    // Best-effort register package subscription with Edge KV API so it shows in /admin
+    // Best-effort register or auto-renew package subscription with Edge KV API
     try {
-      const topSub = normalized[0];
-      if (topSub && topSub.planName && topSub.planName.includes('套餐')) {
-        fetch(`https://${EDGE_HOST}/api/issue`, {
+      const topSub = normalized.find(s => s.planName && s.planName.includes('套餐'));
+      if (topSub && !window.__skipAutoIssueOnce) {
+        const resPromise = fetch(`https://${EDGE_HOST}/api/issue`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             id: topSub.subId,
+            email: user.email || user.uid,
             name: user.email || user.uid,
             days: (topSub.durationMonths || 1) * 30,
             gb: topSub.quotaGb || 200
           })
-        }).catch(() => {});
+        }).then(r => r.json()).catch(() => null);
+        const resData = await Promise.race([
+          resPromise,
+          new Promise(r => setTimeout(() => r(null), 2500))
+        ]);
+        if (resData && resData.ok) {
+          topSub.subUrl = resData.subUrl;
+          topSub.clashUrl = resData.clashUrl;
+          topSub.expMs = resData.exp;
+          topSub.quotaGb = resData.gb;
+          topSub.usedBytes = resData.usedBytes || 0;
+          try {
+            localStorage.setItem(`xgg_subs_${user.uid}`, JSON.stringify(normalized));
+            if (user.email) localStorage.setItem(`xgg_subs_${user.email}`, JSON.stringify(normalized));
+          } catch (e) {}
+        }
       }
     } catch (e) {}
 
@@ -685,7 +709,29 @@ async function loadDashboardData() {
   
   try {
     const rawSubs = await getUserSubscriptions();
+    window.__skipAutoIssueOnce = true;
     const subscriptions = await run30DayAutoDataUpdate(rawSubs);
+    window.__skipAutoIssueOnce = false;
+
+    // Sync live remaining days & used traffic from Edge KV (/api/status)
+    const activeU = getActiveUser();
+    if (activeU && activeU.email && subscriptions.some(s => s.planName && s.planName.includes('套餐'))) {
+      try {
+        const stPromise = fetch(`https://${EDGE_HOST}/api/status?email=${encodeURIComponent(activeU.email)}`)
+          .then(r => r.json())
+          .catch(() => null);
+        const st = await Promise.race([stPromise, new Promise(r => setTimeout(() => r(null), 2000))]);
+        if (st && st.ok && st.expMs) {
+          subscriptions.forEach(s => {
+            if (s.planName && s.planName.includes('套餐')) {
+              s.expMs = st.expMs;
+              s.usedBytes = st.usedBytes || 0;
+              if (st.gb) s.quotaGb = st.gb;
+            }
+          });
+        }
+      } catch (e) {}
+    }
     if (!subscriptions || subscriptions.length === 0) {
       dashboardContent.innerHTML = `
         <div style="text-align:center; padding: 16px 8px; color: #64748b;">
@@ -728,14 +774,16 @@ async function loadDashboardData() {
       let percent = 0;
       
       if (!isServiceType) {
-        const purchaseDate = sub.purchaseMs ? new Date(sub.purchaseMs) : new Date(sub.purchaseDate || now);
         const durationDays = (sub.durationMonths || 1) * 30;
-        
-        const expiryDate = new Date(purchaseDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
+        const purchaseDate = sub.purchaseMs ? new Date(sub.purchaseMs) : new Date(sub.purchaseDate || now);
+        const expiryDate = sub.expMs
+          ? new Date(sub.expMs)
+          : new Date(purchaseDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
         const diffTime = Math.max(0, expiryDate - now);
         diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         isExpired = diffDays <= 0;
-        percent = isExpired ? 0 : Math.min(100, Math.round((diffDays / durationDays) * 100));
+        const totalRefDays = Math.max(durationDays, diffDays);
+        percent = isExpired ? 0 : Math.min(100, Math.round((diffDays / totalRefDays) * 100));
       }
       
       html += `
@@ -770,7 +818,7 @@ async function loadDashboardData() {
                   <span class="days-value">${isExpired ? 0 : diffDays}</span>
                   <span class="days-unit">天</span>
                 </div>
-                <div class="progress-label">剩余时长 · 分配流量: <strong>${sub.quotaGb || (sub.durationMonths >= 12 ? 2000 : 200)} GB</strong></div>
+                <div class="progress-label">剩余时长 · 已用 ${(Number(sub.usedBytes || 0) / 1073741824).toFixed(2)} GB / <strong>${sub.quotaGb || (sub.durationMonths >= 12 ? 2000 : 200)} GB</strong></div>
               </div>
             ` : `
               <div class="progress-section">
