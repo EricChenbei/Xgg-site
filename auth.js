@@ -188,6 +188,9 @@ function normalizeSub(raw) {
 
   const expMs = Number(raw.expMs || tokenData.exp || (purchaseMs + (durationMonths || 1) * 30 * 86400000));
 
+  const validNewSubUrl = (raw.subUrl && raw.subUrl.startsWith(`https://${EDGE_HOST}/sub/`)) ? raw.subUrl : tokenData.subUrl;
+  const validNewClashUrl = (raw.clashUrl && raw.clashUrl.startsWith(`https://${EDGE_HOST}/sub/`)) ? raw.clashUrl : tokenData.clashUrl;
+
   return {
     subId,
     planName,
@@ -200,8 +203,8 @@ function normalizeSub(raw) {
     purchaseMs,
     lastCycleRefreshMs: raw.lastCycleRefreshMs || purchaseMs,
     type: !isPackage ? 'service' : (raw.type || raw.tp || 'vpn'),
-    subUrl: isPackage ? (raw.subUrl || tokenData.subUrl) : '',
-    clashUrl: isPackage ? (raw.clashUrl || tokenData.clashUrl) : '',
+    subUrl: isPackage ? validNewSubUrl : '',
+    clashUrl: isPackage ? validNewClashUrl : '',
     accountInfo
   };
 }
@@ -760,7 +763,11 @@ async function loadDashboardData() {
           displayAccountInfo = '该商品通过邮箱发货，如果未收到邮件请联系客服';
         }
       } else {
-        displaySubUrl = displaySubUrl || DEFAULT_SUB_URL;
+        if (!displaySubUrl || !displaySubUrl.startsWith(`https://${EDGE_HOST}/sub/`)) {
+          const fallbackData = buildCustomerSubUrl({ id: sub.subId, name: (activeU && activeU.email) || '官网客户', purchaseMs: sub.purchaseMs, durationMonths: sub.durationMonths });
+          displaySubUrl = fallbackData.subUrl;
+          sub.clashUrl = fallbackData.clashUrl;
+        }
         if (isRocket) {
           displayAccountInfo = '您套餐内置的小火箭ID通过邮箱发货，如果未收到邮件请联系客服';
         }

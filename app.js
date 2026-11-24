@@ -239,7 +239,6 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (currentPlan.label.includes('一年') || currentPlan.label.includes('年度')) durationMonths = 12;
       else if (currentPlan.label.includes('永久') || (currentPlan.label.includes('小火箭') && !currentPlan.label.includes('套餐'))) durationMonths = 999;
 
-      const defaultSubUrl = 'https://36494.xueshanlink.com/api/xueshanlink/08c0ca2b585f53af0d0b29e731f7119c';
       const isPackage = currentPlan.label.includes('套餐');
       const isRocket = currentPlan.label.includes('小火箭');
 
@@ -249,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
         durationMonths: durationMonths,
         purchaseDate: new Date().toISOString(),
         type: (!isPackage && isRocket) ? 'service' : (currentPlan.type || 'vpn'),
-        subUrl: isPackage ? defaultSubUrl : '',
+        subUrl: '',
         accountInfo: !isPackage
           ? (isRocket ? '小火箭ID通过邮箱发货，如果未收到邮件请联系客服' : '该商品通过邮箱发货，如果未收到邮件请联系客服')
           : (isRocket ? '您套餐内置的小火箭ID通过邮箱发货，如果未收到邮件请联系客服' : '')
